@@ -20,7 +20,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.agentscope</groupId>
+    <groupId>cn.iocoder.agentscope</groupId>
     <artifactId>agentscope-dependencies-bom</artifactId>
     <version>${revision}</version>
 
@@ -60,7 +60,7 @@
     </developers>
 
     <properties>
-        <revision>2.1.0-SNAPSHOT</revision>
+        <revision>2.0.0-SNAPSHOT</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>17</java.version>
