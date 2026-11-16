@@ -13,7 +13,7 @@ yudao-agentscope-java 是 [AgentScope Java](https://github.com/agentscope-ai/age
 | 分支 | 目标环境 | 源码开发版本 | 首个正式版本计划 | 状态 |
 | --- | --- | --- | --- | --- |
 | [`main`](https://github.com/yudaocode/yudao-agentscope-java/tree/main) | Boot 3.x / 4.x，JDK 17 / 25 | `3.0.0-SNAPSHOT` | `3.0.0` | 核心和基础 starter 已完成同 jar 四组合验证，其他扩展验收中 |
-| [`main-jdk8`](https://github.com/yudaocode/yudao-agentscope-java/tree/main-jdk8) | Boot 2.x，JDK 8 | `2.0.0-SNAPSHOT` | `2.0.0` | 移植中，尚未完成运行验收 |
+| [`main-jdk8`](https://github.com/yudaocode/yudao-agentscope-java/tree/main-jdk8) | Boot 2.x，JDK 8 | `2.0.0-SNAPSHOT` | `2.0.0` | 核心、基础与 DashScope starter 已通过 Boot 2.7/JDK 8 验证，其他扩展移植中 |
 
 AgentScope 的 `3.x` 由 Boot 3/4 共用，不另设 `4.x` 制品。当前分支：**`main`**。
 
@@ -57,6 +57,8 @@ mvn -pl agentscope-dependencies-bom,agentscope-distribution/agentscope-bom,agent
 ```
 
 只使用 Java 核心 API 时，可将 starter 换为同 groupId 的 `agentscope-core`；Java 导入仍为 `io.agentscope.*`。模型扩展按实际需要单独引入，不能将核心和基础 starter 的验证结果理解为全部扩展兼容。
+
+Boot 2.7/JDK 8 分支的支持模块、构建与 HTTP 依赖配置见 [Java 8 使用说明](https://github.com/yudaocode/yudao-agentscope-java/blob/main-jdk8/JAVA8-COMPATIBILITY.md)。
 
 下方逐字保留官方项目原始 README，其中的官方 Maven 坐标和发布状态仅针对上游项目；使用本兼容版时，以本节坐标、版本线和支持范围为准。
 <!-- YUDAO-COMPATIBILITY-INTRO-END -->
