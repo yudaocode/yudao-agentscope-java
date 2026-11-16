@@ -1,3 +1,68 @@
+<!-- YUDAO-COMPATIBILITY-INTRO-BEGIN -->
+# yudao-agentscope-java
+
+yudao-agentscope-java 是 [AgentScope Java](https://github.com/agentscope-ai/agentscope-java) 的芋道社区兼容维护版本，并非官方发布。主要补充 **Spring Boot 2.x + JDK 8** 支持；`main` 以 JDK 17 为最低目标，由同一份核心和基础 starter 制品验证 Spring Boot 3.x、4.x 与 JDK 17、25，其他扩展仍需逐项验收。
+
+## 仓库与版本线
+
+| 平台 | 仓库地址 |
+| --- | --- |
+| Gitee | [yudao-agentscope-java](https://gitee.com/yudaocode/yudao-agentscope-java) |
+| GitHub | [yudao-agentscope-java](https://github.com/yudaocode/yudao-agentscope-java) |
+
+| 分支 | 目标环境 | 源码开发版本 | 首个正式版本计划 | 状态 |
+| --- | --- | --- | --- | --- |
+| [`main`](https://github.com/yudaocode/yudao-agentscope-java/tree/main) | Boot 3.x / 4.x，JDK 17 / 25 | `3.0.0-SNAPSHOT` | `3.0.0` | 核心和基础 starter 已完成同 jar 四组合验证，其他扩展验收中 |
+| [`main-jdk8`](https://github.com/yudaocode/yudao-agentscope-java/tree/main-jdk8) | Boot 2.x，JDK 8 | `2.0.0-SNAPSHOT` | `2.0.0` | 移植中，尚未完成运行验收 |
+
+AgentScope 的 `3.x` 由 Boot 3/4 共用，不另设 `4.x` 制品。当前分支：**`main`**。
+
+Maven groupId 为 **`cn.iocoder.agentscope`**，artifactId 和 Java 包名沿用官方。同一个应用只选择一条版本线，同一项目的模块使用同一版本；替换已有依赖时，也要移除对应官方 groupId 下的同类模块，避免重复类。
+
+**当前仅提供源码开发版，尚未发布这些坐标到 Maven Central 或远端 SNAPSHOT 仓库。** 正式版本列为计划，不能直接从 Central 下载；下面的 SNAPSHOT 示例须先从源码安装到本地仓库。正式发布后，将版本改为对应 `x.0.0` 即可从 Central 引入。
+
+## 如何使用
+
+目前可先使用核心及基础 starter；在 JDK 17 下按当前分支构建必要模块：
+
+```bash
+git clone -b main https://github.com/yudaocode/yudao-agentscope-java.git
+cd yudao-agentscope-java
+mvn -pl agentscope-dependencies-bom,agentscope-distribution/agentscope-bom,agentscope-extensions/agentscope-spring-boot-starters/agentscope-spring-boot-starter -am -DskipTests -Dmaven.javadoc.skip=true install
+```
+
+在 Boot 3/4 宿主中引入 BOM 和基础 starter。基础 starter 提供配置与装配入口，模型 provider、凭据及 Agent 行为仍需按需配置：
+
+```xml
+<properties>
+    <yudao-agentscope.version>3.0.0-SNAPSHOT</yudao-agentscope.version>
+</properties>
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>cn.iocoder.agentscope</groupId>
+            <artifactId>agentscope-bom</artifactId>
+            <version>${yudao-agentscope.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+<dependencies>
+    <dependency>
+        <groupId>cn.iocoder.agentscope</groupId>
+        <artifactId>agentscope-spring-boot-starter</artifactId>
+    </dependency>
+</dependencies>
+```
+
+只使用 Java 核心 API 时，可将 starter 换为同 groupId 的 `agentscope-core`；Java 导入仍为 `io.agentscope.*`。模型扩展按实际需要单独引入，不能将核心和基础 starter 的验证结果理解为全部扩展兼容。
+
+下方逐字保留官方项目原始 README，其中的官方 Maven 坐标和发布状态仅针对上游项目；使用本兼容版时，以本节坐标、版本线和支持范围为准。
+<!-- YUDAO-COMPATIBILITY-INTRO-END -->
+
+---
+
 <p align="center">
   <img
     src="https://img.alicdn.com/imgextra/i1/O1CN01nTg6w21NqT5qFKH1u_!!6000000001621-55-tps-550-550.svg"
