@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
 <!--
   ~ Copyright 2024-2026 the original author or authors.
   ~
@@ -14,10 +14,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
 -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>cn.iocoder.agentscope</groupId>
@@ -600,7 +597,7 @@
                 <artifactId>agentscope-extensions-skill-postgresql-repository</artifactId>
                 <version>${project.version}</version>
             </dependency>
-        </dependencies>
+        <dependency><groupId>cn.iocoder.agentscope</groupId><artifactId>agentscope-runtime-sandbox-core</artifactId><version>${revision}</version></dependency></dependencies>
     </dependencyManagement>
 
     <distributionManagement>
@@ -650,9 +647,9 @@
                     </formats>
                     <!-- define a language-specific format -->
                     <java>
-                        <removeUnusedImports />
-                        <forbidWildcardImports />
-                        <importOrder />
+                        <removeUnusedImports/>
+                        <forbidWildcardImports/>
+                        <importOrder/>
                         <!-- apply a specific flavor of google-java-format and reflow long strings -->
                         <googleJavaFormat>
                             <version>${google-java-format.version}</version>

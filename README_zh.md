@@ -60,6 +60,8 @@ mvn -pl agentscope-dependencies-bom,agentscope-distribution/agentscope-bom,agent
 
 Boot 2.7/JDK 8 分支的支持模块、构建与 HTTP 依赖配置见 [Java 8 使用说明](https://github.com/yudaocode/yudao-agentscope-java/blob/main-jdk8/JAVA8-COMPATIBILITY.md)。
 
+独立沙箱 SDK 通过 `cn.iocoder.agentscope:agentscope-runtime-sandbox-core` 按需引入，版本由 AgentScope BOM 管理。Boot 2 使用 `2.0.0-SNAPSHOT`，Boot 3/4 共用 `3.0.0-SNAPSHOT`；不需要引入整个 AgentScope core。使用兼容 SandboxService 管理服务，或配置本机 Docker 与所需沙箱镜像。源码来源、构建、请求超时及资源关闭说明见 [Runtime sandbox 使用说明](agentscope-runtime-sandbox-core/README_zh.md)。外部平台与具体工具服务需按实际环境配置，不能将本地兼容测试理解为所有外部后端均已验收。
+
 下方逐字保留官方项目原始 README，其中的官方 Maven 坐标和发布状态仅针对上游项目；使用本兼容版时，以本节坐标、版本线和支持范围为准。
 <!-- YUDAO-COMPATIBILITY-INTRO-END -->
 
