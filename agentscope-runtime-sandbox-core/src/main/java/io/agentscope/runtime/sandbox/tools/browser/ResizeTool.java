@@ -1,0 +1,74 @@
+/*
+ * Copyright 2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.agentscope.runtime.sandbox.tools.browser;
+
+import io.agentscope.runtime.sandbox.box.BrowserSandbox;
+import io.agentscope.runtime.sandbox.box.Sandbox;
+import io.agentscope.runtime.sandbox.tools.SandboxTool;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class ResizeTool extends BrowserSandboxTool {
+
+    private static final Logger logger = LoggerFactory.getLogger(ResizeTool.class);
+
+    public ResizeTool() {
+        super("browser_resize", "browser", "Resize the browser window");
+        schema = new HashMap<>();
+
+        Map<String, Object> widthProperty = new HashMap<>();
+        widthProperty.put("type", "number");
+        widthProperty.put("description", "Width of the browser window");
+
+        Map<String, Object> heightProperty = new HashMap<>();
+        heightProperty.put("type", "number");
+        heightProperty.put("description", "Height of the browser window");
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("width", widthProperty);
+        properties.put("height", heightProperty);
+
+        List<String> required = Arrays.asList("width", "height");
+
+        schema.put("type", "object");
+        schema.put("properties", properties);
+        schema.put("required", required);
+        schema.put("description", "Request object to resize browser");
+    }
+
+    @Override
+    public SandboxTool bind(Sandbox sandbox) {
+        this.sandbox = sandbox;
+        return this;
+    }
+
+    public String browser_resize(Double width, Double height) {
+        try {
+            if (sandbox instanceof BrowserSandbox browserSandbox) {
+                return browserSandbox.resize(width, height);
+            }
+            throw new RuntimeException("Only BrowserSandbox supported in browser resize tool");
+        } catch (Exception e) {
+            String errorMsg = "Browser Resize Error: " + e.getMessage();
+            logger.error(errorMsg);
+            return errorMsg;
+        }
+    }
+}

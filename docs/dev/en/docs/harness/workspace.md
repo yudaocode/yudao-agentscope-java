@@ -6,6 +6,9 @@ description: 'Source of truth for agent definition and evolution: directory layo
 zh_link: /dev/zh/docs/harness/workspace
 ---
 
+> For the independent Runtime Sandbox SDK, see [coordinates, setup and lifecycle](/dev/en/docs/others/runtime-sandbox).
+
+
 ## Design philosophy
 
 The workspace is `HarnessAgent`'s **source of truth for agent definition and evolution**. Everything that defines what the agent is, and everything the agent learns over time, lives here as a directory of plain Markdown / JSON files — not scattered in code, not pinned to a particular database table.

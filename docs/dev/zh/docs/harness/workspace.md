@@ -4,6 +4,9 @@ description: 智能体定义与进化的 source of truth：目录布局、工作
 en_link: /dev/en/docs/harness/workspace
 ---
 
+> 独立 Runtime Sandbox SDK 的坐标、配置与生命周期见[兼容模块使用说明](/dev/zh/docs/others/runtime-sandbox)。
+
+
 ## 设计理念
 
 工作区（workspace）是 `HarnessAgent` **智能体定义与进化的 source of truth**。智能体"是什么"以及"在运行中学到了什么"，全部以一个目录 + 普通 Markdown / JSON 文件来组织——不散落在代码里，不绑死在某个数据库表上。

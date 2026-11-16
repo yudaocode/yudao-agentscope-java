@@ -13,7 +13,8 @@
   ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
---><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>cn.iocoder.agentscope</groupId>
@@ -55,11 +56,11 @@
     <spring-boot.version>2.7.18</spring-boot.version></properties>
 
     <modules>
-        <module>agentscope-core</module>
+        <module>agentscope-java8-compat</module><module>agentscope-core</module>
         <module>agentscope-extensions</module>
         <module>agentscope-dependencies-bom</module>
         <module>agentscope-distribution</module>
-    </modules>
+    <module>agentscope-runtime-sandbox-core</module></modules>
 
     <description>AgentScope Java: Agent-Oriented Programming for Building LLM Applications</description>
     <url>https://github.com/agentscope-ai/agentscope-java</url>

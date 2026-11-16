@@ -6,7 +6,7 @@
 
 ## 支持范围
 
-当前默认构建包含 11 个 Maven 模块，其中可供应用使用的库为：
+当前默认构建包含 13 个 Maven 模块，其中可供应用使用的库为：
 
 | artifactId | 用途 |
 | --- | --- |
@@ -14,10 +14,11 @@
 | `agentscope-spring-boot-starter` | Boot 2.7 基础自动配置 |
 | `agentscope-extensions-model-dashscope` | DashScope 模型实现 |
 | `agentscope-dashscope-spring-boot-starter` | DashScope 模型自动配置 |
+| `agentscope-runtime-sandbox-core` | 独立 SandboxService / Docker 沙箱 SDK |
 
-其余模块是父 POM、聚合模块和 BOM。
+`agentscope-java8-compat` 自动提供 core 与 runtime-sandbox 共用的基础辅助类；无需在应用中单独配置。其余模块是父 POM、聚合模块和 BOM。
 Harness、Durable、其他模型与存储等扩展，以及 `agentscope-all` 尚未列入本分支默认构建和 BOM；源码保留，后续逐项适配。
-独立的 AgentScope Runtime Sandbox SDK 也不属于本次支持范围。
+独立沙箱模块的构建、配置与生命周期见 [Runtime sandbox 使用说明](agentscope-runtime-sandbox-core/README_zh.md)。
 
 ## 从源码安装
 
