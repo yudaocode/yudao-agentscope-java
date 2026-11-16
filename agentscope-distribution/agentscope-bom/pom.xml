@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
 <!--
   ~ Copyright 2024-2026 the original author or authors.
   ~
@@ -13,11 +13,7 @@
   ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
--->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+--><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>cn.iocoder.agentscope</groupId>
@@ -62,9 +58,9 @@
         <revision>2.0.0-SNAPSHOT</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <java.version>17</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <java.version>8</java.version>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
 
         <spotless.version>3.4.0</spotless.version>
         <google-java-format.version>1.28.0</google-java-format.version>
@@ -79,7 +75,13 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- Agent Core -->
+            <dependency>
+                <groupId>cn.iocoder.agentscope</groupId>
+                <artifactId>agentscope-dependencies-bom</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>cn.iocoder.agentscope</groupId>
                 <artifactId>agentscope-core</artifactId>
@@ -88,519 +90,22 @@
 
             <dependency>
                 <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-harness</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- Durable: neutral runtime, native adapter and optional providers -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-durable-adapter-harness-agentscope</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-durable-adapter-claude</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-durable-adapter-agui</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-durable-worker</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-durable-http</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-durable-sandbox</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-durable-rocketmq</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-durable-objects</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-durable-mcp</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-durable-runtime</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-durable-jdbc</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope All -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions A2A Client -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-a2a-client</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions A2A Server -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-a2a-server</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions AGUI -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-agui</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions Chat Completions Web -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-chat-completions-web</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions Agent Protocol Tasks -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-agent-protocol</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions Mem0 -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-mem0</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions Reme -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-reme</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions Bailian Long Term Memory -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-memory-bailian</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions Rag Bailian -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-rag-bailian</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions Rag Dify -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-rag-dify</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions Rag RagFlow -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-rag-ragflow</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions Rag HayStack -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-rag-haystack</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions Rag Simple -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-rag-simple</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions Scheduler Common -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-scheduler-common</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions Scheduler XXL Job -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-scheduler-xxl-job</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions Scheduler Quartz -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-scheduler-quartz</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions Redis (AgentStateStore + BaseStore + Sandbox) -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-redis</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions MySQL (AgentStateStore + JdbcStore) -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-mysql</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions OSS (AgentStateStore + BaseStore) -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-oss</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions COS (AgentStateStore + BaseStore) -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-cos</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions PostgreSql (AgentStateStore + BaseStore) -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-postgresql</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions MongoDB (AgentStateStore) -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-mongodb</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions JDBC (shared dialect layer for MySQL/PostgreSQL stores) -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-jdbc</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions Sandbox -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-sandbox-kubernetes</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-sandbox-agentrun</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-sandbox-daytona</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-sandbox-e2b</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Extensions Studio -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-studio</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Higress Extension -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-higress</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Git Skill Repository Extension -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-skill-git-repository</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Channel Extensions -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-channel-common</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-channel-dingtalk</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-channel-feishu</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-channel-wecom</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-channel-github</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-channel-gitlab</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-channel-weixin</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Training Extension -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-training</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Jev Extension -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-jev</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope OpenAI Decisions Extension -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-openai-decisions</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope OpenAI Model Extension -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-model-openai</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-model-openai-official</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-model-gemini</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-model-anthropic</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
                 <artifactId>agentscope-extensions-model-dashscope</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-model-ollama</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Micronaut Extension -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-micronaut-extension</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Quarkus Extension -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-quarkus-extension</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Quarkus Extension Deployment -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-quarkus-extension-deployment</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Nacos Extension -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-nacos-a2a</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-nacos-prompt</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-nacos-skill</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Nacos Spring Boot Starter -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-nacos-spring-boot-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope A2A Spring Boot Starter -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-a2a-spring-boot-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-admin-spring-boot-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope AGUI Spring Boot Starter -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-agui-spring-boot-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Spring Boot Starter -->
             <dependency>
                 <groupId>cn.iocoder.agentscope</groupId>
                 <artifactId>agentscope-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- AgentScope Jev Spring Boot Starter -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-jev-spring-boot-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope OpenAI Decisions Spring Boot Starter -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-openai-decisions-spring-boot-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope OpenAI Spring Boot Starter -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-openai-spring-boot-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope OpenAI Official Spring Boot Starter -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-openai-official-spring-boot-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope DashScope Spring Boot Starter -->
             <dependency>
                 <groupId>cn.iocoder.agentscope</groupId>
                 <artifactId>agentscope-dashscope-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- AgentScope Gemini Spring Boot Starter -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-gemini-spring-boot-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Anthropic Spring Boot Starter -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-anthropic-spring-boot-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Ollama Spring Boot Starter -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-ollama-spring-boot-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Chat Completions Web Spring Boot Starter -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-chat-completions-web-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Skill MySQL Storage -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-skill-mysql-repository</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- AgentScope Skill PostgreSQL Storage -->
-            <dependency>
-                <groupId>cn.iocoder.agentscope</groupId>
-                <artifactId>agentscope-extensions-skill-postgresql-repository</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-        </dependencies>
+            </dependencies>
     </dependencyManagement>
 
     <distributionManagement>
@@ -650,9 +155,9 @@
                     </formats>
                     <!-- define a language-specific format -->
                     <java>
-                        <removeUnusedImports />
-                        <forbidWildcardImports />
-                        <importOrder />
+                        <removeUnusedImports/>
+                        <forbidWildcardImports/>
+                        <importOrder/>
                         <!-- apply a specific flavor of google-java-format and reflow long strings -->
                         <googleJavaFormat>
                             <version>${google-java-format.version}</version>

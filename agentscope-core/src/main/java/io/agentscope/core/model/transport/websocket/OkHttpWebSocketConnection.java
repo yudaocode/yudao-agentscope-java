@@ -45,6 +45,7 @@ public class OkHttpWebSocketConnection<T> implements WebSocketConnection<T> {
 
     // Message receive sink (unicast - single subscriber only)
     private final Sinks.Many<T> messageSink = Sinks.many().unicast().onBackpressureBuffer();
+    private final WebSocketSignalQueue signals = new WebSocketSignalQueue();
 
     /**
      * Create a new OkHttpWebSocketConnection.
@@ -84,9 +85,10 @@ public class OkHttpWebSocketConnection<T> implements WebSocketConnection<T> {
     @SuppressWarnings("unchecked")
     void onMessage(byte[] data) {
         if (messageType == byte[].class) {
-            messageSink.tryEmitNext((T) data);
+            signals.emit(() -> messageSink.tryEmitNext((T) data));
         } else if (messageType == String.class) {
-            messageSink.tryEmitNext((T) new String(data, StandardCharsets.UTF_8));
+            signals.emit(
+                    () -> messageSink.tryEmitNext((T) new String(data, StandardCharsets.UTF_8)));
         }
     }
 
@@ -99,7 +101,7 @@ public class OkHttpWebSocketConnection<T> implements WebSocketConnection<T> {
     void onClosed(int code, String reason) {
         closed.set(true);
         closeInfo = new CloseInfo(code, reason);
-        messageSink.tryEmitComplete();
+        signals.emit(() -> messageSink.tryEmitComplete());
     }
 
     /**
@@ -110,8 +112,11 @@ public class OkHttpWebSocketConnection<T> implements WebSocketConnection<T> {
     void onError(Throwable error) {
         closed.set(true);
         closeInfo = new CloseInfo(CloseInfo.ABNORMAL_CLOSURE, error.getMessage());
-        messageSink.tryEmitError(
-                new WebSocketTransportException("WebSocket error", error, url, "ERROR"));
+        signals.emit(
+                () ->
+                        messageSink.tryEmitError(
+                                new WebSocketTransportException(
+                                        "WebSocket error", error, url, "ERROR")));
     }
 
     @Override
@@ -180,6 +185,9 @@ public class OkHttpWebSocketConnection<T> implements WebSocketConnection<T> {
                         log.info("Closing WebSocket connection: {}", url);
                         webSocket.close(CloseInfo.NORMAL_CLOSURE, "");
                         closeInfo = new CloseInfo(CloseInfo.NORMAL_CLOSURE, "");
+                        // Closing locally terminates application reception even if the peer
+                        // never acknowledges the close frame. OkHttp still owns wire cleanup.
+                        signals.emit(() -> messageSink.tryEmitComplete());
                     }
                     sink.success();
                 });

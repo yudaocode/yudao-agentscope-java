@@ -20,16 +20,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.Authenticator;
 import java.net.InetSocketAddress;
-import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpClient.Redirect;
-import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -49,6 +44,9 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.compat.jdkhttp.HttpClient;
+import org.springframework.ai.compat.jdkhttp.HttpClient.Redirect;
+import org.springframework.ai.compat.jdkhttp.HttpResponse.BodyHandlers;
 import reactor.core.Disposable;
 import reactor.core.Disposables;
 import reactor.core.publisher.Flux;
@@ -56,19 +54,19 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
 /**
- * Pure JDK implementation of the HttpTransport interface.
+ * Java8-compatible implementation of the legacy JDK-named HttpTransport.
  *
- * <p>This implementation uses JDK's built-in HttpClient (java.net.http.HttpClient)
- * for HTTP communication and supports:
+ * <p>This implementation uses the asynchronous Apache HttpClient5/Reactor compatibility
+ * bridge for HTTP communication and supports:
  * <ul>
  *   <li>Synchronous HTTP requests</li>
  *   <li>Server-Sent Events (SSE) streaming</li>
  *   <li>HTTP/2 with fallback to HTTP/1.1</li>
- *   <li>Connection pooling (built-in)</li>
+ *   <li>Connection pooling</li>
  *   <li>Configurable timeouts</li>
  * </ul>
  *
- * <p>This implementation has no external dependencies beyond the JDK.
+ * <p>HTTPS HTTP/2 negotiation uses ALPN. Cleartext requests do not send an h2c Upgrade.
  */
 public class JdkHttpTransport implements HttpTransport {
 
@@ -77,6 +75,7 @@ public class JdkHttpTransport implements HttpTransport {
     private static final String SSE_DONE_MARKER = "[DONE]";
 
     private final HttpClient client;
+    private final boolean ownsClient;
     private final HttpTransportConfig config;
     private final Scheduler streamScheduler;
     private final Scheduler responseScheduler;
@@ -96,7 +95,12 @@ public class JdkHttpTransport implements HttpTransport {
      * @throws NullPointerException if config is null
      */
     JdkHttpTransport(HttpTransportConfig config) {
-        this(buildClient(config), config);
+        this(
+                buildClient(config),
+                config,
+                ModelSchedulers.streams(),
+                ModelSchedulers.responses(),
+                true);
     }
 
     /**
@@ -110,15 +114,17 @@ public class JdkHttpTransport implements HttpTransport {
      * @throws NullPointerException if client or config is null
      */
     public JdkHttpTransport(HttpClient client, HttpTransportConfig config) {
-        this(client, config, ModelSchedulers.streams(), ModelSchedulers.responses());
+        this(client, config, ModelSchedulers.streams(), ModelSchedulers.responses(), false);
     }
 
     private JdkHttpTransport(
             HttpClient client,
             HttpTransportConfig config,
             Scheduler streamScheduler,
-            Scheduler responseScheduler) {
+            Scheduler responseScheduler,
+            boolean ownsClient) {
         this.client = Objects.requireNonNull(client, "client must not be null");
+        this.ownsClient = ownsClient;
         this.config = Objects.requireNonNull(config, "config must not be null");
         this.streamScheduler = Objects.requireNonNull(streamScheduler, "streamScheduler");
         this.responseScheduler = Objects.requireNonNull(responseScheduler, "responseScheduler");
@@ -168,22 +174,12 @@ public class JdkHttpTransport implements HttpTransport {
                                         proxyConfig.getHost(), proxyConfig.getPort())));
             }
 
-            // Note: JDK HttpClient does not support SOCKS5 authentication directly.
+            // Note: The Java8 HTTP bridge does not support SOCKS5 authentication.
             // For HTTP proxy authentication, use Authenticator.
             if (proxyConfig.hasAuthentication() && proxyConfig.getType() == ProxyType.HTTP) {
                 final String username = proxyConfig.getUsername();
                 final String password = proxyConfig.getPassword();
-                builder.authenticator(
-                        new Authenticator() {
-                            @Override
-                            protected PasswordAuthentication getPasswordAuthentication() {
-                                if (getRequestorType() == RequestorType.PROXY) {
-                                    return new PasswordAuthentication(
-                                            username, password.toCharArray());
-                                }
-                                return null;
-                            }
-                        });
+                builder.proxyCredentials(username, password.toCharArray());
             }
         }
 
@@ -373,8 +369,9 @@ public class JdkHttpTransport implements HttpTransport {
 
     @Override
     public void close() {
-        closed.set(true);
-        // HttpClient does not require explicit cleanup - it manages its own resources
+        if (closed.compareAndSet(false, true) && ownsClient) {
+            client.close();
+        }
     }
 
     /**
@@ -453,10 +450,9 @@ public class JdkHttpTransport implements HttpTransport {
     }
 
     /**
-     * Resolves the per-request HTTP version: explicit values win verbatim (including HTTP_2 on
-     * cleartext as an h2c opt-in); null (auto) downgrades cleartext requests to HTTP/1.1 (the
-     * JDK's h2c upgrade makes some servers drop the request body) and lets https requests
-     * return null to inherit the client-level version (HTTP/2 via ALPN).
+     * Resolves the per-request HTTP version: explicit values are forwarded to the bridge.
+     * Null (auto) selects HTTP/1.1 on cleartext URLs and inherits the client version on HTTPS.
+     * HTTP/2 preference uses ALPN on HTTPS; the Java8 bridge never sends an h2c Upgrade.
      *
      * @param configured the configured version, or null for auto
      * @param uri the request URI
@@ -656,7 +652,8 @@ public class JdkHttpTransport implements HttpTransport {
                     existingClient != null ? existingClient : buildClient(config),
                     config,
                     streamScheduler != null ? streamScheduler : ModelSchedulers.streams(),
-                    responseScheduler != null ? responseScheduler : ModelSchedulers.responses());
+                    responseScheduler != null ? responseScheduler : ModelSchedulers.responses(),
+                    existingClient == null);
         }
     }
 

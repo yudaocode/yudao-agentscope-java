@@ -107,7 +107,9 @@ public class JsonFileAgentStateStore implements AgentStateStore {
      */
     public JsonFileAgentStateStore(Path rootDirectory) {
         try {
-            Files.createDirectories(rootDirectory);
+            if (!Files.isDirectory(rootDirectory)) {
+                Files.createDirectories(rootDirectory);
+            }
             this.rootDirectory = rootDirectory.toRealPath();
         } catch (IOException e) {
             throw new RuntimeException("Failed to initialize root directory: " + rootDirectory, e);

@@ -252,7 +252,9 @@ public class OkHttpWebSocketTransport implements WebSocketTransport {
                                                     request.getUrl(),
                                                     code,
                                                     reason);
-                                            webSocket.close(code, reason);
+                                            webSocket.close(
+                                                    code == 1005 ? CloseInfo.NORMAL_CLOSURE : code,
+                                                    reason);
                                         }
 
                                         @Override

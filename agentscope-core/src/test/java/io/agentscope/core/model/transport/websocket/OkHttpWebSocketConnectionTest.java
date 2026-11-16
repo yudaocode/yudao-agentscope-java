@@ -152,6 +152,7 @@ class OkHttpWebSocketConnectionTest {
             assertNotNull(connection.getCloseInfo());
             assertEquals(CloseInfo.NORMAL_CLOSURE, connection.getCloseInfo().code());
             verify(mockWebSocket).close(CloseInfo.NORMAL_CLOSURE, "");
+            StepVerifier.create(connection.receive()).verifyComplete();
         }
 
         @Test

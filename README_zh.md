@@ -13,7 +13,7 @@ yudao-agentscope-java 是 [AgentScope Java](https://github.com/agentscope-ai/age
 | 分支 | 目标环境 | 源码开发版本 | 首个正式版本计划 | 状态 |
 | --- | --- | --- | --- | --- |
 | [`main`](https://github.com/yudaocode/yudao-agentscope-java/tree/main) | Boot 3.x / 4.x，JDK 17 / 25 | `3.0.0-SNAPSHOT` | `3.0.0` | 核心和基础 starter 已完成同 jar 四组合验证，其他扩展验收中 |
-| [`main-jdk8`](https://github.com/yudaocode/yudao-agentscope-java/tree/main-jdk8) | Boot 2.x，JDK 8 | `2.0.0-SNAPSHOT` | `2.0.0` | 移植中，尚未完成运行验收 |
+| [`main-jdk8`](https://github.com/yudaocode/yudao-agentscope-java/tree/main-jdk8) | Boot 2.x，JDK 8 | `2.0.0-SNAPSHOT` | `2.0.0` | 核心、基础与 DashScope starter 已通过 Boot 2.7/JDK 8 验证，其他扩展移植中 |
 
 AgentScope 的 `3.x` 由 Boot 3/4 共用，不另设 `4.x` 制品。当前分支：**`main-jdk8`**。
 
@@ -23,11 +23,14 @@ Maven groupId 为 **`cn.iocoder.agentscope`**，artifactId 和 Java 包名沿用
 
 ## 如何使用
 
-JDK 8 分支仍在移植，尚无可用版本。以下坐标是待实现的接入方式，不代表当前可构建或运行；请等待真实 JVM8 的核心、starter 和依赖验收完成。
+当前默认构建包含核心、基础 starter、DashScope 模型扩展及其 starter，已经在 Boot 2.7.18 / 真实 JDK 8 中验证；其他扩展源码保留，尚未列入默认构建和 BOM。详细接入方式见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
 
 ```xml
 <properties>
     <yudao-agentscope.version>2.0.0-SNAPSHOT</yudao-agentscope.version>
+    <!-- 继承 Boot 2.7 parent 时，覆盖其旧版 HTTP 组件管理 -->
+    <httpclient5.version>5.6.1</httpclient5.version>
+    <httpcore5.version>5.4</httpcore5.version>
 </properties>
 <dependencyManagement>
     <dependencies>
@@ -49,6 +52,15 @@ JDK 8 分支仍在移植，尚无可用版本。以下坐标是待实现的接�
 ```
 
 只使用 Java 核心 API 时，可将 starter 换为同 groupId 的 `agentscope-core`；Java 导入仍为 `io.agentscope.*`。模型扩展按实际需要单独引入，不能将核心和基础 starter 的验证结果理解为全部扩展兼容。
+
+使用 DashScope 自动配置时，将上述依赖的 artifactId 换为 `agentscope-dashscope-spring-boot-starter`，配置 `agentscope.dashscope.api-key`、`agentscope.dashscope.model-name` 和 `agentscope.agent.enabled=true`。可注入 `ReActAgent` 后调用 `agent.call("你好").block()`。
+
+源码构建使用 JDK 17、Maven 3.9，业务应用继续使用 JDK 8。先安装 `yudao-spring-ai` 的 `main-jdk8` 分支，再在本仓库执行：
+
+```bash
+# JAVA8_HOME 指向实际 JDK 8 目录，用它执行测试
+mvn -Djvm="$JAVA8_HOME/bin/java" clean install
+```
 
 下方逐字保留官方项目原始 README，其中的官方 Maven 坐标和发布状态仅针对上游项目；使用本兼容版时，以本节坐标、版本线和支持范围为准。
 <!-- YUDAO-COMPATIBILITY-INTRO-END -->

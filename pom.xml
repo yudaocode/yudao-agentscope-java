@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
 <!--
   ~ Copyright 2024-2026 the original author or authors.
   ~
@@ -13,11 +13,7 @@
   ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
--->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+--><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>cn.iocoder.agentscope</groupId>
@@ -30,9 +26,9 @@
         <revision>2.0.0-SNAPSHOT</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <java.version>17</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <java.version>8</java.version>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
 
         <spotless.version>3.4.0</spotless.version>
         <jacoco.version>0.8.14</jacoco.version>
@@ -56,14 +52,11 @@
 
         <maven.deploy.skip>false</maven.deploy.skip>
         <argLine>-Xms512m -Xmx1024m</argLine>
-    </properties>
+    <spring-boot.version>2.7.18</spring-boot.version></properties>
 
     <modules>
         <module>agentscope-core</module>
-        <module>agentscope-harness</module>
-        <module>agentscope-durable</module>
         <module>agentscope-extensions</module>
-        <module>agentscope-examples</module>
         <module>agentscope-dependencies-bom</module>
         <module>agentscope-distribution</module>
     </modules>
@@ -133,7 +126,7 @@
             <artifactId>mockwebserver</artifactId>
             <scope>test</scope>
         </dependency>
-    </dependencies>
+    <dependency><groupId>org.mockito</groupId><artifactId>mockito-inline</artifactId><scope>test</scope><version>4.11.0</version></dependency></dependencies>
 
     <dependencyManagement>
         <dependencies>
@@ -193,8 +186,90 @@
     </distributionManagement>
 
     <build>
-        <plugins>
+        <testSourceDirectory>${project.build.directory}/generated-test-sources/java8</testSourceDirectory>
+		<sourceDirectory>${project.build.directory}/generated-sources/java8</sourceDirectory>
+		<plugins>
             <plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.14.1</version>
+				<configuration>
+					<release>8</release>
+					<compilerArgs>
+						<arg>-parameters</arg>
+						<arg>-XDstringConcat=inline</arg>
+					</compilerArgs>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>com.github.bsideup.jabel</groupId>
+							<artifactId>jabel-javac-plugin</artifactId>
+							<version>1.0.0</version>
+						</path>
+						</annotationProcessorPaths>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>3.6.3</version>
+				<dependencies>
+					<dependency>
+						<groupId>com.github.javaparser</groupId>
+						<artifactId>javaparser-core</artifactId>
+						<version>3.28.2</version>
+					</dependency>
+					<dependency>
+						<groupId>com.github.javaparser</groupId>
+						<artifactId>javaparser-symbol-solver-core</artifactId>
+						<version>3.28.2</version>
+					</dependency>
+				</dependencies>
+				<executions>
+					<execution>
+						<id>java8-main-sources</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>${java.home}/bin/java</executable>
+							<arguments>
+								<argument>--source</argument>
+								<argument>17</argument>
+								<argument>-cp</argument>
+								<classpath/>
+								<argument>${maven.multiModuleProjectDirectory}/compatibility/java8/Java8SourceGenerator.java</argument>
+								<argument>${project.basedir}/src/main/java</argument>
+								<argument>${project.build.directory}/generated-sources/java8</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>java8-test-sources</id>
+						<phase>generate-test-sources</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>${java.home}/bin/java</executable>
+							<arguments>
+								<argument>--source</argument>
+								<argument>17</argument>
+								<argument>-cp</argument>
+								<classpath/>
+								<argument>${maven.multiModuleProjectDirectory}/compatibility/java8/Java8SourceGenerator.java</argument>
+								<argument>${project.basedir}/src/test/java</argument>
+								<argument>${project.build.directory}/generated-test-sources/java8</argument>
+							</arguments>
+						<skip>${maven.test.skip}</skip></configuration>
+					</execution>
+				</executions>
+				<configuration>
+					<includePluginDependencies>true</includePluginDependencies>
+					<classpathScope>compile</classpathScope>
+				</configuration>
+			</plugin>
+			<plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
                 <version>${spotless.version}</version>
@@ -226,10 +301,15 @@
                     </formats>
                     <!-- define a language-specific format -->
                     <java>
-                        <removeUnusedImports />
-                        <forbidWildcardImports />
-                        <formatAnnotations />
-                        <importOrder />
+                        <includes>
+                            <include>src/main/java/**/*.java</include>
+                            <include>src/test/java/**/*.java</include>
+                            <include>compatibility/java8/*.java</include>
+                        </includes>
+                        <removeUnusedImports/>
+                        <forbidWildcardImports/>
+                        <formatAnnotations/>
+                        <importOrder/>
                         <!-- apply a specific flavor of google-java-format and reflow long strings -->
                         <googleJavaFormat>
                             <version>${google-java-format.version}</version>
@@ -286,18 +366,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
                 <version>${maven-site-plugin.version}</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler-plugin.version}</version>
-                <configuration>
-                    <release>${java.version}</release>
-                    <compilerArgs>
-                        <compilerArg>-parameters</compilerArg>
-                    </compilerArgs>
-                    <debug>true</debug>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

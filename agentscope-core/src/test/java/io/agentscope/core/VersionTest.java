@@ -252,7 +252,7 @@ class VersionTest {
         String userAgent = Version.getUserAgent();
 
         // Verify matches expected pattern (relaxed check for different environments)
-        String pattern = "^agentscope-java/.+; java/[0-9.]+; platform/.+$";
+        String pattern = "^agentscope-java/.+; java/[0-9._+\\-]+; platform/.+$";
         Assertions.assertTrue(
                 userAgent.matches(pattern),
                 "User-Agent should match pattern: " + pattern + ", but got: " + userAgent);

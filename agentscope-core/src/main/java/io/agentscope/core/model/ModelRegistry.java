@@ -810,9 +810,7 @@ public final class ModelRegistry {
 
     /** Renders one candidate as class name, providerId, and module/classpath origin. */
     private static String providerDescription(ModelProvider provider) {
-        Module module = provider.getClass().getModule();
-        String origin =
-                module != null && module.isNamed() ? "module " + module.getName() : "classpath";
+        String origin = io.agentscope.core.compat.Java8Platform.moduleOrigin(provider.getClass());
         return provider.getClass().getName()
                 + " (providerId="
                 + provider.providerId()

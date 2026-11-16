@@ -57,30 +57,35 @@ class ModelSchedulingIsolationTest {
         // A separate JVM sets small caps before Schedulers is initialized, without replacing the
         // global scheduler factory or interfering with other tests in the Surefire JVM.
         Path output = tempDir.resolve("isolation.log");
-        // Keep the command line short even with long Windows dependency paths.
-        Path argumentsFile = tempDir.resolve("isolation.args");
-        StringBuilder arguments = new StringBuilder();
-        for (String argument :
-                List.of(
-                        "-Dreactor.schedulers.defaultBoundedElasticSize=1",
-                        "-Djava.util.concurrent.ForkJoinPool.common.parallelism=2",
-                        "-Dagentscope.model.requestThreadCap=2",
-                        "-Dagentscope.model.streamThreadCap=4",
-                        "-Dagentscope.model.responseThreadCap=4",
-                        "-cp",
-                        System.getProperty("java.class.path"),
-                        Probe.class.getName())) {
-            arguments
-                    .append('"')
-                    .append(argument.replace("\\", "\\\\").replace("\"", "\\\""))
-                    .append('"')
-                    .append('\n');
+        // A manifest class path keeps Windows commands short and works on Java 8,
+        // whose launcher does not support @argument files.
+        java.util.jar.Manifest manifest = new java.util.jar.Manifest();
+        manifest.getMainAttributes().put(java.util.jar.Attributes.Name.MANIFEST_VERSION, "1.0");
+        manifest.getMainAttributes()
+                .put(java.util.jar.Attributes.Name.MAIN_CLASS, Probe.class.getName());
+        StringBuilder classPath = new StringBuilder();
+        for (String entry :
+                System.getProperty("java.class.path")
+                        .split(java.util.regex.Pattern.quote(java.io.File.pathSeparator))) {
+            classPath.append(new java.io.File(entry).toURI().toASCIIString()).append(' ');
         }
-        Files.writeString(argumentsFile, arguments);
+        manifest.getMainAttributes()
+                .put(java.util.jar.Attributes.Name.CLASS_PATH, classPath.toString());
+        Path launcher = tempDir.resolve("isolation-launcher.jar");
+        try (java.util.jar.JarOutputStream jar =
+                new java.util.jar.JarOutputStream(Files.newOutputStream(launcher), manifest)) {
+            // The manifest resolves the probe from the unchanged test class path.
+        }
         Process process =
                 new ProcessBuilder(
                                 Path.of(System.getProperty("java.home"), "bin", "java").toString(),
-                                "@" + argumentsFile)
+                                "-Dreactor.schedulers.defaultBoundedElasticSize=1",
+                                "-Djava.util.concurrent.ForkJoinPool.common.parallelism=2",
+                                "-Dagentscope.model.requestThreadCap=2",
+                                "-Dagentscope.model.streamThreadCap=4",
+                                "-Dagentscope.model.responseThreadCap=4",
+                                "-jar",
+                                launcher.toString())
                         .redirectErrorStream(true)
                         .redirectOutput(output.toFile())
                         .start();

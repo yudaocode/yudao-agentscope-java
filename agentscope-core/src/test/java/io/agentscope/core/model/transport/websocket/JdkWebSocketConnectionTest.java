@@ -15,602 +15,194 @@
  */
 package io.agentscope.core.model.transport.websocket;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.net.http.WebSocket;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import okhttp3.WebSocket;
+import okio.ByteString;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 @DisplayName("JdkWebSocketConnection Tests")
 class JdkWebSocketConnectionTest {
 
-    private static final String TEST_URL = "wss://example.com";
+    private static final String TEST_URL = "wss://example.com/ws";
 
     @Nested
-    @DisplayName("Basic State Tests")
-    class BasicStateTests {
+    @DisplayName("Text Protocol Tests")
+    class TextProtocolTests {
 
-        private JdkWebSocketConnection<String> textConnection;
-        private JdkWebSocketConnection<byte[]> binaryConnection;
+        private JdkWebSocketConnection<String> connection;
+        private WebSocket mockWebSocket;
 
         @BeforeEach
         void setUp() {
-            textConnection = new JdkWebSocketConnection<>(TEST_URL, String.class);
-            binaryConnection = new JdkWebSocketConnection<>(TEST_URL, byte[].class);
+            connection = new JdkWebSocketConnection<>(TEST_URL, String.class);
+            mockWebSocket = mock(WebSocket.class);
         }
 
         @Test
         @DisplayName("Should not be open before WebSocket is set")
-        void shouldNotBeOpenBeforeWebSocketIsSet() {
-            assertFalse(textConnection.isOpen());
-            assertFalse(binaryConnection.isOpen());
-        }
-
-        @Test
-        @DisplayName("Should return null close info before close")
-        void shouldReturnNullCloseInfoBeforeClose() {
-            assertNull(textConnection.getCloseInfo());
-            assertNull(binaryConnection.getCloseInfo());
+        void shouldNotBeOpenBeforeWebSocketSet() {
+            assertFalse(connection.isOpen());
+            assertFalse(connection.isInitialized());
         }
 
         @Test
         @DisplayName("Should be open after WebSocket is set")
-        void shouldBeOpenAfterWebSocketIsSet() {
-            WebSocket mockWebSocket = mock(WebSocket.class);
-            textConnection.setWebSocket(mockWebSocket);
-
-            assertTrue(textConnection.isOpen());
-        }
-
-        @Test
-        @DisplayName("Should not be open after close")
-        void shouldNotBeOpenAfterClose() {
-            WebSocket mockWebSocket = mock(WebSocket.class);
-            when(mockWebSocket.sendClose(eq(CloseInfo.NORMAL_CLOSURE), anyString()))
-                    .thenReturn(CompletableFuture.completedFuture(mockWebSocket));
-            textConnection.setWebSocket(mockWebSocket);
-
-            textConnection.close().block();
-
-            assertFalse(textConnection.isOpen());
-        }
-
-        @Test
-        @DisplayName("Should have listener available")
-        void shouldHaveListenerAvailable() {
-            assertNotNull(textConnection.getListener());
-            assertNotNull(binaryConnection.getListener());
-        }
-    }
-
-    @Nested
-    @DisplayName("Listener Callback Tests")
-    class ListenerCallbackTests {
-
-        private JdkWebSocketConnection<String> textConnection;
-        private JdkWebSocketConnection<byte[]> binaryConnection;
-        private WebSocket mockWebSocket;
-
-        @BeforeEach
-        void setUp() {
-            textConnection = new JdkWebSocketConnection<>(TEST_URL, String.class);
-            binaryConnection = new JdkWebSocketConnection<>(TEST_URL, byte[].class);
-            mockWebSocket = mock(WebSocket.class);
-        }
-
-        @Test
-        @DisplayName("Should request more data on open")
-        void shouldRequestMoreDataOnOpen() {
-            WebSocket.Listener listener = textConnection.getListener();
-
-            listener.onOpen(mockWebSocket);
-
-            verify(mockWebSocket).request(1);
-        }
-
-        @Test
-        @DisplayName("Should handle single fragment text message")
-        void shouldHandleSingleFragmentTextMessage() {
-            textConnection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = textConnection.getListener();
-
-            // Subscribe to messages
-            List<String> received = new ArrayList<>();
-            textConnection.receive().subscribe(received::add);
-
-            // Simulate single fragment message
-            listener.onText(mockWebSocket, "Hello World", true);
-
-            assertEquals(1, received.size());
-            assertEquals("Hello World", received.get(0));
-            verify(mockWebSocket).request(1);
-        }
-
-        @Test
-        @DisplayName("Should handle multiple fragment text message")
-        void shouldHandleMultipleFragmentTextMessage() {
-            textConnection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = textConnection.getListener();
-
-            List<String> received = new ArrayList<>();
-            textConnection.receive().subscribe(received::add);
-
-            // Simulate fragmented message
-            listener.onText(mockWebSocket, "Hello ", false);
-            listener.onText(mockWebSocket, "World", true);
-
-            assertEquals(1, received.size());
-            assertEquals("Hello World", received.get(0));
-            verify(mockWebSocket, times(2)).request(1);
-        }
-
-        @Test
-        @DisplayName("Should handle single fragment binary message")
-        void shouldHandleSingleFragmentBinaryMessage() {
-            binaryConnection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = binaryConnection.getListener();
-
-            List<byte[]> received = new ArrayList<>();
-            binaryConnection.receive().subscribe(received::add);
-
-            byte[] data = {0x01, 0x02, 0x03};
-            ByteBuffer buffer = ByteBuffer.wrap(data);
-            listener.onBinary(mockWebSocket, buffer, true);
-
-            assertEquals(1, received.size());
-            assertArrayEquals(data, received.get(0));
-            verify(mockWebSocket).request(1);
-        }
-
-        @Test
-        @DisplayName("Should handle multiple fragment binary message")
-        void shouldHandleMultipleFragmentBinaryMessage() {
-            binaryConnection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = binaryConnection.getListener();
-
-            List<byte[]> received = new ArrayList<>();
-            binaryConnection.receive().subscribe(received::add);
-
-            // Simulate fragmented binary message
-            ByteBuffer buffer1 = ByteBuffer.wrap(new byte[] {0x01, 0x02});
-            ByteBuffer buffer2 = ByteBuffer.wrap(new byte[] {0x03, 0x04});
-            listener.onBinary(mockWebSocket, buffer1, false);
-            listener.onBinary(mockWebSocket, buffer2, true);
-
-            assertEquals(1, received.size());
-            assertArrayEquals(new byte[] {0x01, 0x02, 0x03, 0x04}, received.get(0));
-            verify(mockWebSocket, times(2)).request(1);
-        }
-
-        @Test
-        @DisplayName("Should handle binary buffer expansion")
-        void shouldHandleBinaryBufferExpansion() {
-            binaryConnection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = binaryConnection.getListener();
-
-            List<byte[]> received = new ArrayList<>();
-            binaryConnection.receive().subscribe(received::add);
-
-            // First fragment - small
-            byte[] small = new byte[10];
-            for (int i = 0; i < 10; i++) small[i] = (byte) i;
-
-            // Second fragment - larger (requires buffer expansion)
-            byte[] large = new byte[100];
-            for (int i = 0; i < 100; i++) large[i] = (byte) (i + 10);
-
-            listener.onBinary(mockWebSocket, ByteBuffer.wrap(small), false);
-            listener.onBinary(mockWebSocket, ByteBuffer.wrap(large), true);
-
-            assertEquals(1, received.size());
-            assertEquals(110, received.get(0).length);
-        }
-
-        @Test
-        @DisplayName("Should handle onClose")
-        void shouldHandleOnClose() {
-            textConnection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = textConnection.getListener();
-
-            listener.onClose(mockWebSocket, CloseInfo.NORMAL_CLOSURE, "Normal closure");
-
-            assertFalse(textConnection.isOpen());
-            assertNotNull(textConnection.getCloseInfo());
-            assertEquals(CloseInfo.NORMAL_CLOSURE, textConnection.getCloseInfo().code());
-            assertEquals("Normal closure", textConnection.getCloseInfo().reason());
-        }
-
-        @Test
-        @DisplayName("Should complete receive flux on close")
-        void shouldCompleteReceiveFluxOnClose() {
-            textConnection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = textConnection.getListener();
-
-            StepVerifier.create(textConnection.receive())
-                    .then(() -> listener.onClose(mockWebSocket, CloseInfo.NORMAL_CLOSURE, "Bye"))
-                    .verifyComplete();
-        }
-
-        @Test
-        @DisplayName("Should handle onError")
-        void shouldHandleOnError() {
-            textConnection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = textConnection.getListener();
-
-            listener.onError(mockWebSocket, new RuntimeException("Test error"));
-
-            assertFalse(textConnection.isOpen());
-            assertNotNull(textConnection.getCloseInfo());
-            assertEquals(CloseInfo.ABNORMAL_CLOSURE, textConnection.getCloseInfo().code());
-        }
-
-        @Test
-        @DisplayName("Should emit error on receive when onError is called")
-        void shouldEmitErrorOnReceiveWhenOnErrorIsCalled() {
-            textConnection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = textConnection.getListener();
-
-            StepVerifier.create(textConnection.receive())
-                    .then(
-                            () ->
-                                    listener.onError(
-                                            mockWebSocket, new RuntimeException("Connection lost")))
-                    .expectError(WebSocketTransportException.class)
-                    .verify();
-        }
-    }
-
-    @Nested
-    @DisplayName("Message Type Conversion Tests")
-    class MessageTypeConversionTests {
-
-        @Test
-        @DisplayName("Should receive text as String when messageType is String")
-        void shouldReceiveTextAsStringWhenMessageTypeIsString() {
-            JdkWebSocketConnection<String> connection =
-                    new JdkWebSocketConnection<>(TEST_URL, String.class);
-            WebSocket mockWebSocket = mock(WebSocket.class);
+        void shouldBeOpenAfterWebSocketSet() {
             connection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = connection.getListener();
 
-            List<String> received = new ArrayList<>();
-            connection.receive().subscribe(received::add);
-
-            listener.onText(mockWebSocket, "Hello", true);
-
-            assertEquals(1, received.size());
-            assertEquals("Hello", received.get(0));
-        }
-
-        @Test
-        @DisplayName("Should receive text as byte[] when messageType is byte[]")
-        void shouldReceiveTextAsByteArrayWhenMessageTypeIsByteArray() {
-            JdkWebSocketConnection<byte[]> connection =
-                    new JdkWebSocketConnection<>(TEST_URL, byte[].class);
-            WebSocket mockWebSocket = mock(WebSocket.class);
-            connection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = connection.getListener();
-
-            List<byte[]> received = new ArrayList<>();
-            connection.receive().subscribe(received::add);
-
-            listener.onText(mockWebSocket, "Hello", true);
-
-            assertEquals(1, received.size());
-            assertArrayEquals("Hello".getBytes(StandardCharsets.UTF_8), received.get(0));
-        }
-
-        @Test
-        @DisplayName("Should receive binary as byte[] when messageType is byte[]")
-        void shouldReceiveBinaryAsByteArrayWhenMessageTypeIsByteArray() {
-            JdkWebSocketConnection<byte[]> connection =
-                    new JdkWebSocketConnection<>(TEST_URL, byte[].class);
-            WebSocket mockWebSocket = mock(WebSocket.class);
-            connection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = connection.getListener();
-
-            List<byte[]> received = new ArrayList<>();
-            connection.receive().subscribe(received::add);
-
-            byte[] data = {0x01, 0x02, 0x03};
-            listener.onBinary(mockWebSocket, ByteBuffer.wrap(data), true);
-
-            assertEquals(1, received.size());
-            assertArrayEquals(data, received.get(0));
-        }
-
-        @Test
-        @DisplayName("Should receive binary as String when messageType is String")
-        void shouldReceiveBinaryAsStringWhenMessageTypeIsString() {
-            JdkWebSocketConnection<String> connection =
-                    new JdkWebSocketConnection<>(TEST_URL, String.class);
-            WebSocket mockWebSocket = mock(WebSocket.class);
-            connection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = connection.getListener();
-
-            List<String> received = new ArrayList<>();
-            connection.receive().subscribe(received::add);
-
-            byte[] data = "Hello".getBytes(StandardCharsets.UTF_8);
-            listener.onBinary(mockWebSocket, ByteBuffer.wrap(data), true);
-
-            assertEquals(1, received.size());
-            assertEquals("Hello", received.get(0));
-        }
-    }
-
-    @Nested
-    @DisplayName("Send Message Tests")
-    class SendMessageTests {
-
-        private JdkWebSocketConnection<String> textConnection;
-        private JdkWebSocketConnection<byte[]> binaryConnection;
-        private WebSocket mockWebSocket;
-
-        @BeforeEach
-        void setUp() {
-            textConnection = new JdkWebSocketConnection<>(TEST_URL, String.class);
-            binaryConnection = new JdkWebSocketConnection<>(TEST_URL, byte[].class);
-            mockWebSocket = mock(WebSocket.class);
-        }
-
-        @Test
-        @DisplayName("Should fail send when not connected - text")
-        void shouldFailSendWhenNotConnectedText() {
-            StepVerifier.create(textConnection.send("hello"))
-                    .expectError(WebSocketTransportException.class)
-                    .verify();
-        }
-
-        @Test
-        @DisplayName("Should fail send when not connected - binary")
-        void shouldFailSendWhenNotConnectedBinary() {
-            StepVerifier.create(binaryConnection.send("hello".getBytes(StandardCharsets.UTF_8)))
-                    .expectError(WebSocketTransportException.class)
-                    .verify();
+            assertTrue(connection.isOpen());
+            assertTrue(connection.isInitialized());
         }
 
         @Test
         @DisplayName("Should send text message successfully")
         void shouldSendTextMessageSuccessfully() {
-            textConnection.setWebSocket(mockWebSocket);
-            when(mockWebSocket.sendText(anyString(), anyBoolean()))
-                    .thenReturn(CompletableFuture.completedFuture(mockWebSocket));
+            connection.setWebSocket(mockWebSocket);
+            when(mockWebSocket.send(any(String.class))).thenReturn(true);
 
-            StepVerifier.create(textConnection.send("Hello")).verifyComplete();
+            StepVerifier.create(connection.send("Hello")).verifyComplete();
 
-            verify(mockWebSocket).sendText("Hello", true);
+            verify(mockWebSocket).send("Hello");
+        }
+
+        @Test
+        @DisplayName("Should fail to send when connection is not open")
+        void shouldFailToSendWhenNotOpen() {
+            StepVerifier.create(connection.send("Hello"))
+                    .expectError(WebSocketTransportException.class)
+                    .verify();
+        }
+
+        @Test
+        @DisplayName("Should fail to send when WebSocket returns false")
+        void shouldFailToSendWhenWebSocketReturnsFalse() {
+            connection.setWebSocket(mockWebSocket);
+            when(mockWebSocket.send(any(String.class))).thenReturn(false);
+
+            StepVerifier.create(connection.send("Hello"))
+                    .expectError(WebSocketTransportException.class)
+                    .verify();
+        }
+
+        @Test
+        @DisplayName("Should receive text messages")
+        void shouldReceiveTextMessages() {
+            connection.setWebSocket(mockWebSocket);
+
+            List<String> received = new ArrayList<>();
+            connection.receive().subscribe(received::add);
+
+            connection.onMessage("Hello".getBytes(StandardCharsets.UTF_8));
+            connection.onMessage("World".getBytes(StandardCharsets.UTF_8));
+
+            assertEquals(2, received.size());
+            assertEquals("Hello", received.get(0));
+            assertEquals("World", received.get(1));
+        }
+
+        @Test
+        @DisplayName("Should handle close")
+        void shouldHandleClose() {
+            connection.setWebSocket(mockWebSocket);
+
+            connection.onClosed(CloseInfo.NORMAL_CLOSURE, "Normal closure");
+
+            assertFalse(connection.isOpen());
+            assertNotNull(connection.getCloseInfo());
+            assertEquals(CloseInfo.NORMAL_CLOSURE, connection.getCloseInfo().code());
+            assertEquals("Normal closure", connection.getCloseInfo().reason());
+        }
+
+        @Test
+        @DisplayName("Should handle error")
+        void shouldHandleError() {
+            connection.setWebSocket(mockWebSocket);
+
+            connection.onError(new RuntimeException("Test error"));
+
+            assertFalse(connection.isOpen());
+            assertNotNull(connection.getCloseInfo());
+            assertEquals(CloseInfo.ABNORMAL_CLOSURE, connection.getCloseInfo().code());
+        }
+
+        @Test
+        @DisplayName("Should close connection")
+        void shouldCloseConnection() {
+            connection.setWebSocket(mockWebSocket);
+
+            StepVerifier.create(connection.close()).verifyComplete();
+
+            assertFalse(connection.isOpen());
+            assertNotNull(connection.getCloseInfo());
+            assertEquals(CloseInfo.NORMAL_CLOSURE, connection.getCloseInfo().code());
+            verify(mockWebSocket).close(CloseInfo.NORMAL_CLOSURE, "");
+            StepVerifier.create(connection.receive()).verifyComplete();
+        }
+
+        @Test
+        @DisplayName("Should return null close info before close")
+        void shouldReturnNullCloseInfoBeforeClose() {
+            assertNull(connection.getCloseInfo());
+        }
+    }
+
+    @Nested
+    @DisplayName("Binary Protocol Tests")
+    class BinaryProtocolTests {
+
+        private JdkWebSocketConnection<byte[]> connection;
+        private WebSocket mockWebSocket;
+
+        @BeforeEach
+        void setUp() {
+            connection = new JdkWebSocketConnection<>(TEST_URL, byte[].class);
+            mockWebSocket = mock(WebSocket.class);
         }
 
         @Test
         @DisplayName("Should send binary message successfully")
         void shouldSendBinaryMessageSuccessfully() {
-            binaryConnection.setWebSocket(mockWebSocket);
-            when(mockWebSocket.sendBinary(ArgumentMatchers.any(ByteBuffer.class), eq(true)))
-                    .thenReturn(CompletableFuture.completedFuture(mockWebSocket));
-
-            byte[] data = {0x01, 0x02, 0x03};
-            StepVerifier.create(binaryConnection.send(data)).verifyComplete();
-
-            verify(mockWebSocket).sendBinary(ArgumentMatchers.any(ByteBuffer.class), eq(true));
-        }
-
-        @Test
-        @DisplayName("Should fail send when WebSocket sendText fails")
-        void shouldFailSendWhenWebSocketSendTextFails() {
-            textConnection.setWebSocket(mockWebSocket);
-            CompletableFuture<WebSocket> failedFuture = new CompletableFuture<>();
-            failedFuture.completeExceptionally(new RuntimeException("Send failed"));
-            when(mockWebSocket.sendText(anyString(), anyBoolean())).thenReturn(failedFuture);
-
-            StepVerifier.create(textConnection.send("Hello"))
-                    .expectError(WebSocketTransportException.class)
-                    .verify();
-        }
-
-        @Test
-        @DisplayName("Should fail send when connection is closed")
-        void shouldFailSendWhenConnectionIsClosed() {
-            textConnection.setWebSocket(mockWebSocket);
-            when(mockWebSocket.sendClose(eq(CloseInfo.NORMAL_CLOSURE), anyString()))
-                    .thenReturn(CompletableFuture.completedFuture(mockWebSocket));
-
-            textConnection.close().block();
-
-            StepVerifier.create(textConnection.send("Hello"))
-                    .expectError(WebSocketTransportException.class)
-                    .verify();
-        }
-
-        @Test
-        @DisplayName("Should handle concurrent sends safely")
-        void shouldHandleConcurrentSendsSafely() {
-            textConnection.setWebSocket(mockWebSocket);
-            when(mockWebSocket.sendText(anyString(), anyBoolean()))
-                    .thenReturn(CompletableFuture.completedFuture(mockWebSocket));
-
-            List<Mono<Void>> sends =
-                    IntStream.range(0, 100)
-                            .mapToObj(i -> textConnection.send("msg-" + i))
-                            .collect(Collectors.toList());
-
-            Flux.merge(sends).blockLast(Duration.ofSeconds(10));
-
-            verify(mockWebSocket, times(100)).sendText(anyString(), eq(true));
-        }
-    }
-
-    @Nested
-    @DisplayName("Receive Message Tests")
-    class ReceiveMessageTests {
-
-        private JdkWebSocketConnection<String> textConnection;
-        private WebSocket mockWebSocket;
-
-        @BeforeEach
-        void setUp() {
-            textConnection = new JdkWebSocketConnection<>(TEST_URL, String.class);
-            mockWebSocket = mock(WebSocket.class);
-        }
-
-        @Test
-        @DisplayName("Should receive multiple messages as Flux")
-        void shouldReceiveMultipleMessagesAsFlux() {
-            textConnection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = textConnection.getListener();
-
-            StepVerifier.create(textConnection.receive().take(3))
-                    .then(() -> listener.onText(mockWebSocket, "Message 1", true))
-                    .expectNext("Message 1")
-                    .then(() -> listener.onText(mockWebSocket, "Message 2", true))
-                    .expectNext("Message 2")
-                    .then(() -> listener.onText(mockWebSocket, "Message 3", true))
-                    .expectNext("Message 3")
-                    .verifyComplete();
-        }
-
-        @Test
-        @DisplayName("Should map non-WebSocketTransportException to WebSocketTransportException")
-        void shouldMapNonWebSocketTransportExceptionToWebSocketTransportException() {
-            textConnection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = textConnection.getListener();
-
-            StepVerifier.create(textConnection.receive())
-                    .then(() -> listener.onError(mockWebSocket, new RuntimeException("Test error")))
-                    .expectError(WebSocketTransportException.class)
-                    .verify();
-        }
-    }
-
-    @Nested
-    @DisplayName("Close Connection Tests")
-    class CloseConnectionTests {
-
-        private JdkWebSocketConnection<String> textConnection;
-        private WebSocket mockWebSocket;
-
-        @BeforeEach
-        void setUp() {
-            textConnection = new JdkWebSocketConnection<>(TEST_URL, String.class);
-            mockWebSocket = mock(WebSocket.class);
-        }
-
-        @Test
-        @DisplayName("Should complete close when not connected")
-        void shouldCompleteCloseWhenNotConnected() {
-            StepVerifier.create(textConnection.close()).verifyComplete();
-        }
-
-        @Test
-        @DisplayName("Should close connection successfully")
-        void shouldCloseConnectionSuccessfully() {
-            textConnection.setWebSocket(mockWebSocket);
-            when(mockWebSocket.sendClose(eq(CloseInfo.NORMAL_CLOSURE), anyString()))
-                    .thenReturn(CompletableFuture.completedFuture(mockWebSocket));
-
-            StepVerifier.create(textConnection.close()).verifyComplete();
-
-            assertFalse(textConnection.isOpen());
-            assertNotNull(textConnection.getCloseInfo());
-            assertEquals(CloseInfo.NORMAL_CLOSURE, textConnection.getCloseInfo().code());
-            verify(mockWebSocket).sendClose(CloseInfo.NORMAL_CLOSURE, "");
-        }
-
-        @Test
-        @DisplayName("Should handle close failure")
-        void shouldHandleCloseFailure() {
-            textConnection.setWebSocket(mockWebSocket);
-            CompletableFuture<WebSocket> failedFuture = new CompletableFuture<>();
-            failedFuture.completeExceptionally(new RuntimeException("Close failed"));
-            when(mockWebSocket.sendClose(eq(CloseInfo.NORMAL_CLOSURE), anyString()))
-                    .thenReturn(failedFuture);
-
-            StepVerifier.create(textConnection.close())
-                    .expectError(RuntimeException.class)
-                    .verify();
-        }
-
-        @Test
-        @DisplayName("Should be idempotent when closing multiple times")
-        void shouldBeIdempotentWhenClosingMultipleTimes() {
-            textConnection.setWebSocket(mockWebSocket);
-            when(mockWebSocket.sendClose(eq(CloseInfo.NORMAL_CLOSURE), anyString()))
-                    .thenReturn(CompletableFuture.completedFuture(mockWebSocket));
-
-            // First close
-            StepVerifier.create(textConnection.close()).verifyComplete();
-
-            // Second close should also complete (without calling sendClose again)
-            StepVerifier.create(textConnection.close()).verifyComplete();
-
-            // sendClose should only be called once
-            verify(mockWebSocket, times(1)).sendClose(CloseInfo.NORMAL_CLOSURE, "");
-        }
-    }
-
-    @Nested
-    @DisplayName("CloseInfo Tests")
-    class CloseInfoTests {
-
-        @Test
-        @DisplayName("Should set close info on normal close")
-        void shouldSetCloseInfoOnNormalClose() {
-            JdkWebSocketConnection<String> connection =
-                    new JdkWebSocketConnection<>(TEST_URL, String.class);
-            WebSocket mockWebSocket = mock(WebSocket.class);
             connection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = connection.getListener();
+            when(mockWebSocket.send(any(ByteString.class))).thenReturn(true);
 
-            listener.onClose(mockWebSocket, 1000, "Normal closure");
+            byte[] data = new byte[] {0x01, 0x02, 0x03};
+            StepVerifier.create(connection.send(data)).verifyComplete();
 
-            CloseInfo closeInfo = connection.getCloseInfo();
-            assertNotNull(closeInfo);
-            assertEquals(1000, closeInfo.code());
-            assertEquals("Normal closure", closeInfo.reason());
-            assertTrue(closeInfo.isNormal());
+            verify(mockWebSocket).send(ByteString.of(data));
         }
 
         @Test
-        @DisplayName("Should set close info on abnormal close")
-        void shouldSetCloseInfoOnAbnormalClose() {
-            JdkWebSocketConnection<String> connection =
-                    new JdkWebSocketConnection<>(TEST_URL, String.class);
-            WebSocket mockWebSocket = mock(WebSocket.class);
+        @DisplayName("Should receive binary messages")
+        void shouldReceiveBinaryMessages() {
             connection.setWebSocket(mockWebSocket);
-            WebSocket.Listener listener = connection.getListener();
 
-            listener.onError(mockWebSocket, new RuntimeException("Connection lost"));
+            List<byte[]> received = new ArrayList<>();
+            connection.receive().subscribe(received::add);
 
-            CloseInfo closeInfo = connection.getCloseInfo();
-            assertNotNull(closeInfo);
-            assertEquals(CloseInfo.ABNORMAL_CLOSURE, closeInfo.code());
-            assertFalse(closeInfo.isNormal());
+            byte[] data1 = new byte[] {0x01, 0x02};
+            byte[] data2 = new byte[] {0x03, 0x04};
+            connection.onMessage(data1);
+            connection.onMessage(data2);
+
+            assertEquals(2, received.size());
+            assertEquals(2, received.get(0).length);
+            assertEquals(2, received.get(1).length);
         }
     }
 }

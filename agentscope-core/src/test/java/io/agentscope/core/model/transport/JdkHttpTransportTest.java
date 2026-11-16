@@ -1127,7 +1127,8 @@ class JdkHttpTransportTest {
         assertEquals(
                 HttpClient.Version.HTTP_1_1,
                 JdkHttpTransport.resolveRequestVersion(null, URI.create("localhost/v1")));
-        // explicit values win verbatim, including HTTP_2 on cleartext as an h2c opt-in
+        // explicit values win verbatim, including HTTP_2 preference; the bridge never sends an h2c
+        // Upgrade
         assertEquals(
                 HttpClient.Version.HTTP_1_1,
                 JdkHttpTransport.resolveRequestVersion(
@@ -1171,7 +1172,7 @@ class JdkHttpTransportTest {
     private Optional<HttpClient.Version> executeAndCaptureVersion(
             HttpTransportConfig config, String url) {
         CapturingHttpClient capturingClient = new CapturingHttpClient();
-        JdkHttpTransport transport = new JdkHttpTransport(capturingClient, config);
+        JdkHttpTransport transport = new JdkHttpTransport(capturingClient.client, config);
         HttpRequest request =
                 HttpRequest.builder()
                         .url(url)
@@ -1202,7 +1203,8 @@ class JdkHttpTransportTest {
         assertTrue(connection == null || !connection.contains("HTTP2-Settings"));
         assertEquals("{\"input\": \"test\"}", recorded.getBody().readUtf8());
 
-        // contrast: explicit HTTP_2 does put the h2c upgrade on the wire
+        // The Java 8 Apache bridge negotiates HTTP/2 through TLS ALPN; a plain
+        // HTTP/1.1 server remains usable when HTTP_2 is explicitly preferred.
         mockServer.enqueue(new MockResponse().setResponseCode(200).setBody("{\"ok\":true}"));
         JdkHttpTransport h2cTransport =
                 new JdkHttpTransport(
@@ -1218,7 +1220,9 @@ class JdkHttpTransportTest {
         } finally {
             h2cTransport.close();
         }
-        assertEquals("h2c", mockServer.takeRequest().getHeader("Upgrade"));
+        RecordedRequest preferred = mockServer.takeRequest();
+        assertEquals("{}", preferred.getBody().readUtf8());
+        assertNull(preferred.getHeader("Upgrade"));
     }
 
     @Test
@@ -1332,7 +1336,7 @@ class JdkHttpTransportTest {
                         .build();
         BlockingInputStream body = new BlockingInputStream();
         DeferredBodyHttpClient client = new DeferredBodyHttpClient(body);
-        JdkHttpTransport customTransport = new JdkHttpTransport(client, customConfig);
+        JdkHttpTransport customTransport = new JdkHttpTransport(client.client, customConfig);
 
         try {
             HttpRequest request =
@@ -1406,7 +1410,26 @@ class JdkHttpTransportTest {
     }
 
     /** Records the built JDK request for assertions. */
-    private static class CapturingHttpClient extends HttpClient {
+    private static class CapturingHttpClient {
+        private final HttpClient client = createMockClient();
+
+        private HttpClient createMockClient() {
+            HttpClient mock = org.mockito.Mockito.mock(HttpClient.class);
+            try {
+                org.mockito.Mockito.doAnswer(
+                                invocation ->
+                                        send(invocation.getArgument(0), invocation.getArgument(1)))
+                        .when(mock)
+                        .send(
+                                org.mockito.ArgumentMatchers.any(java.net.http.HttpRequest.class),
+                                org.mockito.ArgumentMatchers
+                                        .<java.net.http.HttpResponse.BodyHandler<Object>>any());
+            } catch (Exception failure) {
+                throw new AssertionError("Cannot prepare controlled HTTP client", failure);
+            }
+            return mock;
+        }
+
         private final AtomicReference<java.net.http.HttpRequest> capturedRequest =
                 new AtomicReference<>();
 
@@ -1414,116 +1437,108 @@ class JdkHttpTransportTest {
             return capturedRequest.get();
         }
 
-        @Override
         public Optional<CookieHandler> cookieHandler() {
             return Optional.empty();
         }
 
-        @Override
         public Optional<Duration> connectTimeout() {
             return Optional.empty();
         }
 
-        @Override
         public Redirect followRedirects() {
             return Redirect.NEVER;
         }
 
-        @Override
         public Optional<ProxySelector> proxy() {
             return Optional.empty();
         }
 
-        @Override
         public SSLContext sslContext() {
             return null;
         }
 
-        @Override
         public SSLParameters sslParameters() {
             return new SSLParameters();
         }
 
-        @Override
         public Optional<Authenticator> authenticator() {
             return Optional.empty();
         }
 
-        @Override
         public Version version() {
             return Version.HTTP_2;
         }
 
-        @Override
         public Optional<Executor> executor() {
             return Optional.empty();
         }
 
-        @Override
         public <T> java.net.http.HttpResponse<T> send(
                 java.net.http.HttpRequest request,
                 java.net.http.HttpResponse.BodyHandler<T> responseBodyHandler) {
             capturedRequest.set(request);
-            return new java.net.http.HttpResponse<>() {
-                @Override
+            return new java.net.http.HttpResponse<T>() {
                 public int statusCode() {
                     return 200;
                 }
 
-                @Override
                 public java.net.http.HttpRequest request() {
                     return request;
                 }
 
-                @Override
                 public Optional<java.net.http.HttpResponse<T>> previousResponse() {
                     return Optional.empty();
                 }
 
-                @Override
                 public java.net.http.HttpHeaders headers() {
                     return java.net.http.HttpHeaders.of(Map.of(), (name, value) -> true);
                 }
 
-                @Override
                 public T body() {
                     return null;
                 }
 
-                @Override
                 public Optional<SSLSession> sslSession() {
                     return Optional.empty();
                 }
 
-                @Override
                 public URI uri() {
                     return request.uri();
                 }
 
-                @Override
                 public Version version() {
                     return Version.HTTP_1_1;
                 }
             };
         }
 
-        @Override
         public <T> CompletableFuture<java.net.http.HttpResponse<T>> sendAsync(
                 java.net.http.HttpRequest request,
                 java.net.http.HttpResponse.BodyHandler<T> responseBodyHandler) {
             throw new UnsupportedOperationException("sendAsync is not used in this test");
         }
-
-        @Override
-        public <T> CompletableFuture<java.net.http.HttpResponse<T>> sendAsync(
-                java.net.http.HttpRequest request,
-                java.net.http.HttpResponse.BodyHandler<T> responseBodyHandler,
-                java.net.http.HttpResponse.PushPromiseHandler<T> pushPromiseHandler) {
-            throw new UnsupportedOperationException("sendAsync is not used in this test");
-        }
     }
 
-    private static class DeferredBodyHttpClient extends HttpClient {
+    private static class DeferredBodyHttpClient {
+        private final HttpClient client = createMockClient();
+
+        private HttpClient createMockClient() {
+            HttpClient mock = org.mockito.Mockito.mock(HttpClient.class);
+            try {
+                org.mockito.Mockito.doAnswer(
+                                invocation ->
+                                        send(invocation.getArgument(0), invocation.getArgument(1)))
+                        .when(mock)
+                        .send(
+                                org.mockito.ArgumentMatchers.any(java.net.http.HttpRequest.class),
+                                org.mockito.ArgumentMatchers
+                                        .<java.net.http.HttpResponse.BodyHandler<Object>>any());
+            } catch (Exception failure) {
+                throw new AssertionError("Cannot prepare controlled HTTP client", failure);
+            }
+            return mock;
+        }
+
         private final InputStream body;
         private final CountDownLatch started = new CountDownLatch(1);
         private final CountDownLatch interrupted = new CountDownLatch(1);
@@ -1533,52 +1548,42 @@ class JdkHttpTransportTest {
             this.body = body;
         }
 
-        @Override
         public Optional<CookieHandler> cookieHandler() {
             return Optional.empty();
         }
 
-        @Override
         public Optional<Duration> connectTimeout() {
             return Optional.empty();
         }
 
-        @Override
         public Redirect followRedirects() {
             return Redirect.NEVER;
         }
 
-        @Override
         public Optional<ProxySelector> proxy() {
             return Optional.empty();
         }
 
-        @Override
         public SSLContext sslContext() {
             return null;
         }
 
-        @Override
         public SSLParameters sslParameters() {
             return new SSLParameters();
         }
 
-        @Override
         public Optional<Authenticator> authenticator() {
             return Optional.empty();
         }
 
-        @Override
         public Version version() {
             return Version.HTTP_2;
         }
 
-        @Override
         public Optional<Executor> executor() {
             return Optional.empty();
         }
 
-        @Override
         @SuppressWarnings("unchecked")
         public <T> java.net.http.HttpResponse<T> send(
                 java.net.http.HttpRequest request,
@@ -1597,19 +1602,10 @@ class JdkHttpTransportTest {
             return (java.net.http.HttpResponse<T>) new TestHttpResponse(200, body);
         }
 
-        @Override
         public <T> CompletableFuture<java.net.http.HttpResponse<T>> sendAsync(
                 java.net.http.HttpRequest request,
                 java.net.http.HttpResponse.BodyHandler<T> responseBodyHandler) {
             throw new AssertionError("Streaming must not depend on sendAsync completion");
-        }
-
-        @Override
-        public <T> CompletableFuture<java.net.http.HttpResponse<T>> sendAsync(
-                java.net.http.HttpRequest request,
-                java.net.http.HttpResponse.BodyHandler<T> responseBodyHandler,
-                java.net.http.HttpResponse.PushPromiseHandler<T> pushPromiseHandler) {
-            return sendAsync(request, responseBodyHandler);
         }
     }
 
@@ -1622,42 +1618,34 @@ class JdkHttpTransportTest {
             this.body = body;
         }
 
-        @Override
         public int statusCode() {
             return statusCode;
         }
 
-        @Override
         public java.net.http.HttpRequest request() {
             return null;
         }
 
-        @Override
         public Optional<java.net.http.HttpResponse<InputStream>> previousResponse() {
             return Optional.empty();
         }
 
-        @Override
         public java.net.http.HttpHeaders headers() {
             return java.net.http.HttpHeaders.of(Map.of(), (name, value) -> true);
         }
 
-        @Override
         public InputStream body() {
             return body;
         }
 
-        @Override
         public Optional<SSLSession> sslSession() {
             return Optional.empty();
         }
 
-        @Override
         public URI uri() {
             return URI.create("http://localhost/deferred-body");
         }
 
-        @Override
         public Version version() {
             return Version.HTTP_2;
         }
@@ -1671,7 +1659,6 @@ class JdkHttpTransportTest {
             return -1;
         }
 
-        @Override
         public byte[] readAllBytes() {
             return "closed".getBytes(StandardCharsets.UTF_8);
         }

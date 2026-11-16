@@ -28,10 +28,9 @@ public enum HttpVersion {
     HTTP_1_1,
 
     /**
-     * HTTP version 2. Negotiated via ALPN on {@code https://} URLs; on cleartext URLs it
-     * attempts an h2c upgrade (RFC 7540 section 3.2), which some servers (e.g. vLLM/uvicorn)
-     * handle by dropping the request body. Only set it explicitly when the server is known to
-     * support it.
+     * HTTP version 2. Negotiated via ALPN on {@code https://} URLs. The Java 8
+     * Apache bridge does not implement cleartext h2c Upgrade; cleartext requests
+     * retain HTTP/1.1 behavior.
      */
     HTTP_2;
 

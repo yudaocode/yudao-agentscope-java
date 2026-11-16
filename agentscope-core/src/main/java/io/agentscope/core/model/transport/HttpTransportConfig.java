@@ -356,8 +356,8 @@ public class HttpTransportConfig {
         /**
          * Set the HTTP version, or null for automatic resolution (the default): cleartext
          * requests use HTTP/1.1, https requests use HTTP/2 via ALPN. Explicit {@link
-         * HttpVersion#HTTP_2} on cleartext URLs opts in to an h2c upgrade, which some servers
-         * (e.g. vLLM/uvicorn) do not handle. Any non-https scheme counts as cleartext. Only
+         * HttpVersion#HTTP_2} is forwarded as a protocol preference. The Java8 bridge never
+         * sends an h2c Upgrade. Any non-https scheme counts as cleartext. Only
          * {@link JdkHttpTransport} honors this option.
          *
          * @param httpVersion the HTTP version, or null for auto

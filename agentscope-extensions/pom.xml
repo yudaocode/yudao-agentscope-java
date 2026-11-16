@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
 <!--
   ~ Copyright 2024-2026 the original author or authors.
   ~
@@ -13,11 +13,7 @@
   ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
--->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+--><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>cn.iocoder.agentscope</groupId>
@@ -32,31 +28,6 @@
 
     <modules>
         <module>agentscope-spring-boot-starters</module>
-        <module>agentscope-extensions-protocol</module>
-        <module>agentscope-extensions-mem</module>
-        <module>agentscope-extensions-oss</module>
-        <module>agentscope-extensions-cos</module>
-        <module>agentscope-extensions-redis</module>
-        <module>agentscope-extensions-mysql</module>
-        <module>agentscope-extensions-postgresql</module>
-        <module>agentscope-extensions-mongodb</module>
-        <module>agentscope-extensions-jdbc</module>
-        <module>agentscope-extensions-durable-jdbc</module>
-        <module>agentscope-extensions-durable-http</module>
-        <module>agentscope-extensions-durable-sandbox</module>
-        <module>agentscope-extensions-durable-rocketmq</module>
-        <module>agentscope-extensions-durable-objects</module>
-        <module>agentscope-extensions-durable-mcp</module>
-        <module>agentscope-extensions-rag</module>
         <module>agentscope-extensions-model</module>
-        <module>agentscope-extensions-higress</module>
-        <module>agentscope-extensions-nacos</module>
-        <module>agentscope-extensions-skills</module>
-        <module>agentscope-extensions-studio</module>
-        <module>agentscope-extensions-judge</module>
-        <module>agentscope-extensions-scheduler</module>
-        <module>agentscope-extensions-training</module>
-        <module>agentscope-extensions-channel</module>
-        <module>agentscope-extensions-sandbox</module>
     </modules>
 </project>

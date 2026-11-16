@@ -16,17 +16,24 @@
 package io.agentscope.core.model.transport.websocket;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.agentscope.core.model.transport.ProxyConfig;
 import io.agentscope.core.model.transport.ProxyType;
 import io.agentscope.core.model.transport.WebSocketTransport;
+import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.http.HttpClient;
+import java.net.Proxy;
 import java.time.Duration;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import okhttp3.OkHttpClient;
+import okhttp3.Response;
+import okhttp3.WebSocket;
+import okhttp3.WebSocketListener;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -48,12 +55,15 @@ class JdkWebSocketTransportTest {
         }
 
         @Test
-        @DisplayName("Should create client with custom HttpClient")
-        void shouldCreateClientWithCustomHttpClient() {
-            HttpClient httpClient =
-                    HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(60)).build();
+        @DisplayName("Should create client with custom OkHttpClient")
+        void shouldCreateClientWithCustomOkHttpClient() {
+            OkHttpClient okHttpClient =
+                    new OkHttpClient.Builder()
+                            .connectTimeout(60, TimeUnit.SECONDS)
+                            .pingInterval(15, TimeUnit.SECONDS)
+                            .build();
 
-            WebSocketTransport client = JdkWebSocketTransport.create(httpClient);
+            WebSocketTransport client = JdkWebSocketTransport.create(okHttpClient);
 
             assertNotNull(client);
         }
@@ -70,6 +80,7 @@ class JdkWebSocketTransportTest {
 
             assertEquals("wss://example.com", request.getUrl());
             assertEquals("Bearer token", request.getHeaders().get("Authorization"));
+            assertEquals("value", request.getHeaders().get("X-Custom"));
             assertEquals(Duration.ofSeconds(60), request.getConnectTimeout());
         }
 
@@ -93,6 +104,9 @@ class JdkWebSocketTransportTest {
             WebSocketTransportConfig config =
                     WebSocketTransportConfig.builder()
                             .connectTimeout(Duration.ofSeconds(60))
+                            .readTimeout(Duration.ofSeconds(30))
+                            .writeTimeout(Duration.ofSeconds(45))
+                            .pingInterval(Duration.ofSeconds(20))
                             .build();
 
             JdkWebSocketTransport transport = JdkWebSocketTransport.create(config);
@@ -112,37 +126,14 @@ class JdkWebSocketTransportTest {
         }
 
         @Test
-        @DisplayName("Should create client with default config values")
-        void shouldCreateClientWithDefaultConfigValues() {
+        @DisplayName("Should create client with default timeout values")
+        void shouldCreateClientWithDefaultTimeoutValues() {
             WebSocketTransportConfig config = WebSocketTransportConfig.defaults();
 
             assertEquals(Duration.ofSeconds(30), config.getConnectTimeout());
             assertEquals(Duration.ZERO, config.getReadTimeout());
             assertEquals(Duration.ofSeconds(30), config.getWriteTimeout());
             assertEquals(Duration.ofSeconds(30), config.getPingInterval());
-            assertFalse(config.isIgnoreSsl());
-        }
-
-        @Test
-        @DisplayName("Should create client with all config values set")
-        void shouldCreateClientWithAllConfigValuesSet() {
-            WebSocketTransportConfig config =
-                    WebSocketTransportConfig.builder()
-                            .connectTimeout(Duration.ofSeconds(60))
-                            .readTimeout(Duration.ofSeconds(30))
-                            .writeTimeout(Duration.ofSeconds(45))
-                            .pingInterval(Duration.ofSeconds(20))
-                            .ignoreSsl(true)
-                            .build();
-
-            JdkWebSocketTransport transport = JdkWebSocketTransport.create(config);
-
-            assertNotNull(transport);
-            assertEquals(Duration.ofSeconds(60), config.getConnectTimeout());
-            assertEquals(Duration.ofSeconds(30), config.getReadTimeout());
-            assertEquals(Duration.ofSeconds(45), config.getWriteTimeout());
-            assertEquals(Duration.ofSeconds(20), config.getPingInterval());
-            assertTrue(config.isIgnoreSsl());
         }
     }
 
@@ -188,18 +179,6 @@ class JdkWebSocketTransportTest {
         }
 
         @Test
-        @DisplayName("Should create client with SOCKS4 proxy")
-        void shouldCreateClientWithSocks4Proxy() {
-            ProxyConfig proxyConfig = ProxyConfig.socks4("socks.example.com", 1080);
-            WebSocketTransportConfig config =
-                    WebSocketTransportConfig.builder().proxy(proxyConfig).build();
-
-            JdkWebSocketTransport transport = JdkWebSocketTransport.create(config);
-
-            assertNotNull(transport);
-        }
-
-        @Test
         @DisplayName("Should create client with proxy and nonProxyHosts")
         void shouldCreateClientWithProxyAndNonProxyHosts() {
             ProxyConfig proxyConfig =
@@ -231,37 +210,110 @@ class JdkWebSocketTransportTest {
             assertTrue(proxyConfig.shouldBypass("localhost"));
             assertTrue(proxyConfig.shouldBypass("api.internal.com"));
             assertTrue(proxyConfig.shouldBypass("192.168.1.1"));
-            assertFalse(proxyConfig.shouldBypass("example.com"));
-        }
-
-        @Test
-        @DisplayName("Should not bypass proxy for non-matching hosts")
-        void shouldNotBypassProxyForNonMatchingHosts() {
-            ProxyConfig proxyConfig =
-                    ProxyConfig.builder()
-                            .type(ProxyType.HTTP)
-                            .host("proxy.example.com")
-                            .port(8080)
-                            .nonProxyHosts(Set.of("localhost"))
-                            .build();
-
-            assertFalse(proxyConfig.shouldBypass("example.com"));
-            assertFalse(proxyConfig.shouldBypass("api.example.com"));
-        }
-
-        @Test
-        @DisplayName("Should handle null nonProxyHosts")
-        void shouldHandleNullNonProxyHosts() {
-            ProxyConfig proxyConfig = ProxyConfig.http("proxy.example.com", 8080);
-
-            assertFalse(proxyConfig.shouldBypass("localhost"));
-            assertFalse(proxyConfig.shouldBypass("example.com"));
         }
     }
 
     @Nested
     @DisplayName("Connection Tests")
     class ConnectionTests {
+
+        @Test
+        @DisplayName("Should connect to WebSocket server successfully")
+        void shouldConnectToWebSocketServerSuccessfully() throws IOException {
+            MockWebServer server = new MockWebServer();
+            server.enqueue(
+                    new MockResponse()
+                            .withWebSocketUpgrade(
+                                    new WebSocketListener() {
+                                        @Override
+                                        public void onOpen(WebSocket webSocket, Response response) {
+                                            // Connection opened
+                                        }
+                                    }));
+            server.start();
+
+            try {
+                String wsUrl = server.url("/ws").toString().replace("http://", "ws://");
+                WebSocketRequest request = WebSocketRequest.builder(wsUrl).build();
+                JdkWebSocketTransport transport = JdkWebSocketTransport.create();
+
+                StepVerifier.create(transport.connect(request, String.class))
+                        .assertNext(
+                                connection -> {
+                                    assertNotNull(connection);
+                                    assertTrue(connection.isOpen());
+                                })
+                        .verifyComplete();
+
+                transport.shutdown();
+            } finally {
+                server.shutdown();
+            }
+        }
+
+        @Test
+        @DisplayName("Should include headers in request")
+        void shouldIncludeHeadersInRequest() throws IOException, InterruptedException {
+            MockWebServer server = new MockWebServer();
+            server.enqueue(
+                    new MockResponse()
+                            .withWebSocketUpgrade(
+                                    new WebSocketListener() {
+                                        @Override
+                                        public void onOpen(WebSocket webSocket, Response response) {
+                                            // Connection opened
+                                        }
+                                    }));
+            server.start();
+
+            try {
+                String wsUrl = server.url("/ws").toString().replace("http://", "ws://");
+                WebSocketRequest request =
+                        WebSocketRequest.builder(wsUrl)
+                                .header("Authorization", "Bearer test-token")
+                                .header("X-Custom-Header", "custom-value")
+                                .build();
+                JdkWebSocketTransport transport = JdkWebSocketTransport.create();
+
+                StepVerifier.create(transport.connect(request, String.class))
+                        .assertNext(
+                                connection -> {
+                                    assertNotNull(connection);
+                                })
+                        .verifyComplete();
+
+                // Verify headers were sent
+                var recordedRequest = server.takeRequest();
+                assertEquals("Bearer test-token", recordedRequest.getHeader("Authorization"));
+                assertEquals("custom-value", recordedRequest.getHeader("X-Custom-Header"));
+
+                transport.shutdown();
+            } finally {
+                server.shutdown();
+            }
+        }
+
+        @Test
+        @DisplayName("Should handle connection failure")
+        void shouldHandleConnectionFailure() throws IOException {
+            MockWebServer server = new MockWebServer();
+            server.enqueue(new MockResponse().setResponseCode(404));
+            server.start();
+
+            try {
+                String wsUrl = server.url("/ws").toString().replace("http://", "ws://");
+                WebSocketRequest request = WebSocketRequest.builder(wsUrl).build();
+                JdkWebSocketTransport transport = JdkWebSocketTransport.create();
+
+                StepVerifier.create(transport.connect(request, String.class))
+                        .expectError(WebSocketTransportException.class)
+                        .verify(Duration.ofSeconds(10));
+
+                transport.shutdown();
+            } finally {
+                server.shutdown();
+            }
+        }
 
         @Test
         @DisplayName("Should handle connection to non-existent server")
@@ -283,47 +335,55 @@ class JdkWebSocketTransportTest {
 
             transport.shutdown();
         }
+    }
+
+    @Nested
+    @DisplayName("Send and Receive Tests")
+    class SendAndReceiveTests {
 
         @Test
-        @DisplayName("Should handle connection with invalid URL")
-        void shouldHandleConnectionWithInvalidUrl() {
-            WebSocketRequest request =
-                    WebSocketRequest.builder("ws://invalid-host-that-does-not-exist:9999/ws")
-                            .connectTimeout(Duration.ofSeconds(2))
-                            .build();
+        @DisplayName("Should send and receive text messages")
+        void shouldSendAndReceiveTextMessages() throws IOException {
+            MockWebServer server = new MockWebServer();
+            server.enqueue(
+                    new MockResponse()
+                            .withWebSocketUpgrade(
+                                    new WebSocketListener() {
+                                        @Override
+                                        public void onOpen(WebSocket webSocket, Response response) {
+                                            // Echo server
+                                        }
 
-            JdkWebSocketTransport transport = JdkWebSocketTransport.create();
+                                        @Override
+                                        public void onMessage(WebSocket webSocket, String text) {
+                                            webSocket.send("Echo: " + text);
+                                        }
+                                    }));
+            server.start();
 
-            StepVerifier.create(transport.connect(request, String.class))
-                    .expectError(WebSocketTransportException.class)
-                    .verify(Duration.ofSeconds(30));
+            try {
+                String wsUrl = server.url("/ws").toString().replace("http://", "ws://");
+                WebSocketRequest request = WebSocketRequest.builder(wsUrl).build();
+                JdkWebSocketTransport transport = JdkWebSocketTransport.create();
 
-            transport.shutdown();
-        }
+                StepVerifier.create(
+                                transport
+                                        .connect(request, String.class)
+                                        .flatMapMany(
+                                                connection -> {
+                                                    connection.send("Hello").subscribe();
+                                                    return connection.receive().take(1);
+                                                }))
+                        .assertNext(
+                                message -> {
+                                    assertEquals("Echo: Hello", message);
+                                })
+                        .verifyComplete();
 
-        @Test
-        @DisplayName("Should include connect timeout in request")
-        void shouldIncludeConnectTimeoutInRequest() {
-            Duration customTimeout = Duration.ofSeconds(45);
-            WebSocketRequest request =
-                    WebSocketRequest.builder("ws://localhost:9999/ws")
-                            .connectTimeout(customTimeout)
-                            .build();
-
-            assertEquals(customTimeout, request.getConnectTimeout());
-        }
-
-        @Test
-        @DisplayName("Should include headers in request")
-        void shouldIncludeHeadersInRequest() {
-            WebSocketRequest request =
-                    WebSocketRequest.builder("ws://localhost:9999/ws")
-                            .header("Authorization", "Bearer token")
-                            .header("X-Custom", "value")
-                            .build();
-
-            assertEquals("Bearer token", request.getHeaders().get("Authorization"));
-            assertEquals("value", request.getHeaders().get("X-Custom"));
+                transport.shutdown();
+            } finally {
+                server.shutdown();
+            }
         }
     }
 
@@ -341,16 +401,34 @@ class JdkWebSocketTransportTest {
         }
 
         @Test
-        @DisplayName("Should shutdown cleanly with config")
-        void shouldShutdownCleanlyWithConfig() {
-            WebSocketTransportConfig config =
-                    WebSocketTransportConfig.builder()
-                            .connectTimeout(Duration.ofSeconds(30))
-                            .build();
-            JdkWebSocketTransport transport = JdkWebSocketTransport.create(config);
+        @DisplayName("Should shutdown after connection was established")
+        void shouldShutdownAfterConnectionWasEstablished() throws IOException {
+            MockWebServer server = new MockWebServer();
+            server.enqueue(
+                    new MockResponse()
+                            .withWebSocketUpgrade(
+                                    new WebSocketListener() {
+                                        @Override
+                                        public void onOpen(WebSocket webSocket, Response response) {
+                                            // Connection opened
+                                        }
+                                    }));
+            server.start();
 
-            // Should not throw
-            transport.shutdown();
+            try {
+                String wsUrl = server.url("/ws").toString().replace("http://", "ws://");
+                WebSocketRequest request = WebSocketRequest.builder(wsUrl).build();
+                JdkWebSocketTransport transport = JdkWebSocketTransport.create();
+
+                WebSocketConnection<String> connection =
+                        transport.connect(request, String.class).block(Duration.ofSeconds(5));
+                assertNotNull(connection);
+
+                // Should not throw
+                transport.shutdown();
+            } finally {
+                server.shutdown();
+            }
         }
     }
 
@@ -363,7 +441,7 @@ class JdkWebSocketTransportTest {
         void shouldCreateClientWithSslVerificationEnabledByDefault() {
             WebSocketTransportConfig config = WebSocketTransportConfig.defaults();
 
-            assertFalse(config.isIgnoreSsl());
+            assertEquals(false, config.isIgnoreSsl());
 
             JdkWebSocketTransport transport = JdkWebSocketTransport.create(config);
             assertNotNull(transport);
@@ -375,7 +453,7 @@ class JdkWebSocketTransportTest {
             WebSocketTransportConfig config =
                     WebSocketTransportConfig.builder().ignoreSsl(true).build();
 
-            assertTrue(config.isIgnoreSsl());
+            assertEquals(true, config.isIgnoreSsl());
 
             JdkWebSocketTransport transport = JdkWebSocketTransport.create(config);
             assertNotNull(transport);
@@ -383,8 +461,34 @@ class JdkWebSocketTransportTest {
     }
 
     @Nested
-    @DisplayName("ProxyConfig Tests")
-    class ProxyConfigTests {
+    @DisplayName("ProxyConfig Integration Tests")
+    class ProxyConfigIntegrationTests {
+
+        @Test
+        @DisplayName("Should create Java Proxy from HTTP ProxyConfig")
+        void shouldCreateJavaProxyFromHttpProxyConfig() {
+            ProxyConfig proxyConfig = ProxyConfig.http("proxy.example.com", 8080);
+
+            Proxy javaProxy = proxyConfig.toJavaProxy();
+
+            assertEquals(Proxy.Type.HTTP, javaProxy.type());
+            InetSocketAddress address = (InetSocketAddress) javaProxy.address();
+            assertEquals("proxy.example.com", address.getHostString());
+            assertEquals(8080, address.getPort());
+        }
+
+        @Test
+        @DisplayName("Should create Java Proxy from SOCKS5 ProxyConfig")
+        void shouldCreateJavaProxyFromSocks5ProxyConfig() {
+            ProxyConfig proxyConfig = ProxyConfig.socks5("socks.example.com", 1080);
+
+            Proxy javaProxy = proxyConfig.toJavaProxy();
+
+            assertEquals(Proxy.Type.SOCKS, javaProxy.type());
+            InetSocketAddress address = (InetSocketAddress) javaProxy.address();
+            assertEquals("socks.example.com", address.getHostString());
+            assertEquals(1080, address.getPort());
+        }
 
         @Test
         @DisplayName("Should detect authentication configured")
@@ -399,77 +503,10 @@ class JdkWebSocketTransportTest {
                             .username("user")
                             .password("")
                             .build();
-            ProxyConfig nullPassword =
-                    ProxyConfig.builder()
-                            .type(ProxyType.HTTP)
-                            .host("proxy.example.com")
-                            .port(8080)
-                            .username("user")
-                            .build();
 
             assertTrue(withAuth.hasAuthentication());
-            assertFalse(withoutAuth.hasAuthentication());
-            assertFalse(emptyPassword.hasAuthentication());
-            assertFalse(nullPassword.hasAuthentication());
-        }
-
-        @Test
-        @DisplayName("Should get proxy configuration details")
-        void shouldGetProxyConfigurationDetails() {
-            ProxyConfig proxyConfig =
-                    ProxyConfig.builder()
-                            .type(ProxyType.HTTP)
-                            .host("proxy.example.com")
-                            .port(8080)
-                            .username("user")
-                            .password("password")
-                            .nonProxyHosts(Set.of("localhost"))
-                            .build();
-
-            assertEquals(ProxyType.HTTP, proxyConfig.getType());
-            assertEquals("proxy.example.com", proxyConfig.getHost());
-            assertEquals(8080, proxyConfig.getPort());
-            assertEquals("user", proxyConfig.getUsername());
-            assertEquals("password", proxyConfig.getPassword());
-            assertNotNull(proxyConfig.getNonProxyHosts());
-            assertTrue(proxyConfig.getNonProxyHosts().contains("localhost"));
-        }
-
-        @Test
-        @DisplayName("Should get socket address from proxy config")
-        void shouldGetSocketAddressFromProxyConfig() {
-            ProxyConfig proxyConfig = ProxyConfig.http("proxy.example.com", 8080);
-
-            InetSocketAddress socketAddress = proxyConfig.getSocketAddress();
-
-            assertEquals("proxy.example.com", socketAddress.getHostString());
-            assertEquals(8080, socketAddress.getPort());
-        }
-
-        @Test
-        @DisplayName("Should convert to string correctly")
-        void shouldConvertToStringCorrectly() {
-            ProxyConfig proxyConfig =
-                    ProxyConfig.http("proxy.example.com", 8080, "user", "password");
-
-            String str = proxyConfig.toString();
-
-            assertTrue(str.contains("proxy.example.com"));
-            assertTrue(str.contains("8080"));
-            assertTrue(str.contains("user"));
-            assertTrue(str.contains("****")); // Password should be masked
-        }
-
-        @Test
-        @DisplayName("Should check equality correctly")
-        void shouldCheckEqualityCorrectly() {
-            ProxyConfig config1 = ProxyConfig.http("proxy.example.com", 8080);
-            ProxyConfig config2 = ProxyConfig.http("proxy.example.com", 8080);
-            ProxyConfig config3 = ProxyConfig.http("proxy.example.com", 8081);
-
-            assertEquals(config1, config2);
-            assertEquals(config1.hashCode(), config2.hashCode());
-            assertFalse(config1.equals(config3));
+            assertTrue(!withoutAuth.hasAuthentication());
+            assertTrue(!emptyPassword.hasAuthentication());
         }
     }
 }

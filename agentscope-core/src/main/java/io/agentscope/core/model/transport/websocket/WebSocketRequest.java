@@ -119,7 +119,7 @@ public final class WebSocketRequest {
         /**
          * Set the connection timeout.
          *
-         * @param timeout Connection timeout
+         * @param timeout Connection timeout, or null to use transport-client timeouts
          * @return this builder
          */
         public Builder connectTimeout(Duration timeout) {

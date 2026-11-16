@@ -51,10 +51,10 @@ class JdkHttpTransportStreamCancelTest {
     void timeoutFallbackIsDeliveredWhenServerStallsMidStream() throws Exception {
         try (ServerSocket server = new ServerSocket(0)) {
             AtomicReference<Socket> accepted = new AtomicReference<>();
-            CountDownLatch peerSawEof = new CountDownLatch(1);
+            CountDownLatch peerSawClose = new CountDownLatch(1);
             Thread writer =
                     new Thread(
-                            () -> serveOneChunkThenStall(server, accepted, peerSawEof),
+                            () -> serveOneChunkThenStall(server, accepted, peerSawClose),
                             "stalling-sse-server");
             writer.setDaemon(true);
             writer.start();
@@ -97,7 +97,7 @@ class JdkHttpTransportStreamCancelTest {
                 assertNotNull(error.get(), "the fallback error must reach the subscriber");
                 assertEquals("MOCK_TIMEOUT", error.get().getMessage());
                 assertTrue(
-                        peerSawEof.await(5, TimeUnit.SECONDS),
+                        peerSawClose.await(5, TimeUnit.SECONDS),
                         "cancelling the stream must close the response body, not just return");
             } finally {
                 transport.close();
@@ -114,10 +114,10 @@ class JdkHttpTransportStreamCancelTest {
     void cancelClosesTheStalledConnection() throws Exception {
         try (ServerSocket server = new ServerSocket(0)) {
             AtomicReference<Socket> accepted = new AtomicReference<>();
-            CountDownLatch peerSawEof = new CountDownLatch(1);
+            CountDownLatch peerSawClose = new CountDownLatch(1);
             Thread writer =
                     new Thread(
-                            () -> serveOneChunkThenStall(server, accepted, peerSawEof),
+                            () -> serveOneChunkThenStall(server, accepted, peerSawClose),
                             "stalling-sse-server");
             writer.setDaemon(true);
             writer.start();
@@ -152,8 +152,9 @@ class JdkHttpTransportStreamCancelTest {
                         disposeMs < 2_000,
                         "dispose must not block behind the parked read, took " + disposeMs + "ms");
                 assertTrue(
-                        peerSawEof.await(5, TimeUnit.SECONDS),
-                        "dispose must close the response body so the peer sees EOF");
+                        peerSawClose.await(5, TimeUnit.SECONDS),
+                        "dispose must close the response body so the peer observes a closed"
+                                + " connection");
             } finally {
                 transport.close();
                 Socket socket = accepted.get();
@@ -166,7 +167,7 @@ class JdkHttpTransportStreamCancelTest {
 
     /** Sends SSE headers and one data chunk, then keeps the connection open without more data. */
     private static void serveOneChunkThenStall(
-            ServerSocket server, AtomicReference<Socket> accepted, CountDownLatch peerSawEof) {
+            ServerSocket server, AtomicReference<Socket> accepted, CountDownLatch peerSawClose) {
         try (Socket socket = server.accept()) {
             accepted.set(socket);
             OutputStream out = socket.getOutputStream();
@@ -185,14 +186,18 @@ class JdkHttpTransportStreamCancelTest {
             out.flush();
 
             // The POST body is already buffered, so this read drains it and then blocks until the
-            // client closes the connection - the observable effect of a real cancellation.
+            // client closes the connection (FIN or RST), the observable effect of cancellation.
             socket.setSoTimeout(10_000);
             InputStream in = socket.getInputStream();
             try {
                 while (in.read() != -1) {
                     // drain the request body, then wait for the peer's FIN
                 }
-                peerSawEof.countDown();
+                peerSawClose.countDown();
+            } catch (java.net.SocketException reset) {
+                // Apache's immediate cancellation may send RST instead of FIN.
+                // Both terminate this read and prove the stalled connection closed.
+                peerSawClose.countDown();
             } catch (SocketTimeoutException ignored) {
                 // The client never closed; the assertion in the test reports it.
             }

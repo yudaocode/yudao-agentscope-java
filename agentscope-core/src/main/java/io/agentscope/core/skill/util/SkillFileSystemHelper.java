@@ -183,6 +183,16 @@ public final class SkillFileSystemHelper {
      */
     public static AgentSkill loadSkillFromDirectory(
             Path skillDir, String source, boolean includeResources) {
+        // Java 8 ZIP paths retain a directory entry's trailing slash, which makes
+        // relativize produce ../skill-name/resource instead of resource.
+        String directory = skillDir.toString();
+        if ("jar".equals(skillDir.getFileSystem().provider().getScheme())
+                && directory.length() > 1
+                && directory.endsWith("/")) {
+            skillDir =
+                    skillDir.getFileSystem()
+                            .getPath(directory.substring(0, directory.length() - 1));
+        }
         if (!Files.exists(skillDir)) {
             throw new IllegalArgumentException("Skill directory does not exist: " + skillDir);
         }

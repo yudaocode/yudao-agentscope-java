@@ -16,41 +16,45 @@
 package io.agentscope.core.model.transport.websocket;
 
 import io.agentscope.core.model.transport.ProxyConfig;
-import io.agentscope.core.model.transport.ProxyType;
 import io.agentscope.core.model.transport.WebSocketTransport;
 import java.io.IOException;
-import java.net.Authenticator;
-import java.net.InetSocketAddress;
-import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.WebSocket;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import okhttp3.Credentials;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.WebSocket;
+import okhttp3.WebSocketListener;
+import okio.ByteString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
 /**
- * WebSocket client implementation based on JDK 11+ HttpClient.
+ * Java8 implementation of the legacy JDK-named WebSocket transport, backed by OkHttp.
+ * Custom clients use okhttp3.OkHttpClient because java.net.http is unavailable on Java8.
  *
  * <p>Features:
  *
  * <ul>
- *   <li>No additional dependencies, uses JDK built-in API
+ *   <li>Mature and stable HTTP client library
+ *   <li>Built-in ping/pong heartbeat (pingInterval)
+ *   <li>Better connection pool management
  *   <li>Client instance is reusable
- *   <li>Thread-safe
  * </ul>
  *
  * <p>Usage example:
@@ -74,10 +78,18 @@ public class JdkWebSocketTransport implements WebSocketTransport {
 
     private static final Logger log = LoggerFactory.getLogger(JdkWebSocketTransport.class);
 
-    private final HttpClient httpClient;
+    private final OkHttpClient client;
+    private final boolean ownsClient;
+    private final java.util.Set<JdkWebSocketConnection<?>> connections =
+            java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private final java.util.Map<JdkWebSocketConnection<?>, reactor.core.publisher.MonoSink<?>>
+            pending = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.concurrent.atomic.AtomicBoolean closed =
+            new java.util.concurrent.atomic.AtomicBoolean();
 
-    private JdkWebSocketTransport(HttpClient httpClient) {
-        this.httpClient = httpClient;
+    private JdkWebSocketTransport(OkHttpClient client, boolean ownsClient) {
+        this.client = java.util.Objects.requireNonNull(client);
+        this.ownsClient = ownsClient;
     }
 
     /**
@@ -87,17 +99,23 @@ public class JdkWebSocketTransport implements WebSocketTransport {
      */
     public static JdkWebSocketTransport create() {
         return new JdkWebSocketTransport(
-                HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build());
+                new OkHttpClient.Builder()
+                        .connectTimeout(30, TimeUnit.SECONDS)
+                        .readTimeout(0, TimeUnit.SECONDS) // No read timeout for WebSocket
+                        .writeTimeout(30, TimeUnit.SECONDS)
+                        .pingInterval(30, TimeUnit.SECONDS) // Heartbeat interval
+                        .build(),
+                true);
     }
 
     /**
-     * Create a client with custom HttpClient.
+     * Create a client with custom OkHttpClient.
      *
-     * @param httpClient Custom HttpClient instance
+     * @param client Custom OkHttpClient instance
      * @return JdkWebSocketTransport instance
      */
-    public static JdkWebSocketTransport create(HttpClient httpClient) {
-        return new JdkWebSocketTransport(httpClient);
+    public static JdkWebSocketTransport create(OkHttpClient client) {
+        return new JdkWebSocketTransport(client, false);
     }
 
     /**
@@ -109,14 +127,17 @@ public class JdkWebSocketTransport implements WebSocketTransport {
      * @return JdkWebSocketTransport instance
      */
     public static JdkWebSocketTransport create(WebSocketTransportConfig config) {
-        return new JdkWebSocketTransport(buildClient(config));
+        return new JdkWebSocketTransport(buildClient(config), true);
     }
 
-    private static HttpClient buildClient(WebSocketTransportConfig config) {
-        HttpClient.Builder builder =
-                HttpClient.newBuilder()
-                        .version(HttpClient.Version.HTTP_2)
-                        .connectTimeout(config.getConnectTimeout());
+    private static OkHttpClient buildClient(WebSocketTransportConfig config) {
+        OkHttpClient.Builder builder =
+                new OkHttpClient.Builder()
+                        .connectTimeout(
+                                config.getConnectTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                        .readTimeout(config.getReadTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                        .writeTimeout(config.getWriteTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                        .pingInterval(config.getPingInterval().toMillis(), TimeUnit.MILLISECONDS);
 
         // Configure SSL (optionally ignore certificate verification)
         if (config.isIgnoreSsl()) {
@@ -127,13 +148,12 @@ public class JdkWebSocketTransport implements WebSocketTransport {
                         + " environments, as it exposes connections to man-in-the-middle attacks.");
             try {
                 SSLContext sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(
-                        null,
-                        new TrustManager[] {createTrustAllTrustManager()},
-                        new SecureRandom());
-                builder.sslContext(sslContext);
+                X509TrustManager trustManager = createTrustAllTrustManager();
+                sslContext.init(null, new TrustManager[] {trustManager}, new SecureRandom());
+                builder.sslSocketFactory(sslContext.getSocketFactory(), trustManager)
+                        .hostnameVerifier((hostname, session) -> true);
             } catch (NoSuchAlgorithmException | KeyManagementException e) {
-                throw new RuntimeException("Failed to create trust-all SSL context", e);
+                throw new RuntimeException("Failed to create trust-all SSL socket factory", e);
             }
         }
 
@@ -143,29 +163,24 @@ public class JdkWebSocketTransport implements WebSocketTransport {
 
             if (proxyConfig.getNonProxyHosts() != null
                     && !proxyConfig.getNonProxyHosts().isEmpty()) {
-                builder.proxy(new NonProxyHostsSelector(proxyConfig));
+                builder.proxySelector(new NonProxyHostsSelector(proxyConfig));
             } else {
-                builder.proxy(
-                        ProxySelector.of(
-                                new InetSocketAddress(
-                                        proxyConfig.getHost(), proxyConfig.getPort())));
+                builder.proxy(proxyConfig.toJavaProxy());
             }
 
-            // Note: JDK HttpClient does not support SOCKS5 authentication directly.
-            // For HTTP proxy authentication, use Authenticator.
-            if (proxyConfig.hasAuthentication() && proxyConfig.getType() == ProxyType.HTTP) {
+            if (proxyConfig.hasAuthentication()) {
                 final String username = proxyConfig.getUsername();
                 final String password = proxyConfig.getPassword();
-                builder.authenticator(
-                        new Authenticator() {
-                            @Override
-                            protected PasswordAuthentication getPasswordAuthentication() {
-                                if (getRequestorType() == RequestorType.PROXY) {
-                                    return new PasswordAuthentication(
-                                            username, password.toCharArray());
-                                }
-                                return null;
+                builder.proxyAuthenticator(
+                        (route, response) -> {
+                            if (response.request().header("Proxy-Authorization") != null) {
+                                return null; // Avoid infinite retry
                             }
+                            String credential = Credentials.basic(username, password);
+                            return response.request()
+                                    .newBuilder()
+                                    .header("Proxy-Authorization", credential)
+                                    .build();
                         });
             }
         }
@@ -195,55 +210,194 @@ public class JdkWebSocketTransport implements WebSocketTransport {
     @Override
     public <T> Mono<WebSocketConnection<T>> connect(
             WebSocketRequest request, Class<T> messageType) {
-        return Mono.create(
-                sink -> {
-                    log.info("Connecting to WebSocket: {}", request.getUrl());
+        Mono<WebSocketConnection<T>> handshake =
+                Mono.<WebSocketConnection<T>>create(
+                        sink -> {
+                            synchronized (connections) {
+                                if (closed.get()) {
+                                    sink.error(
+                                            new IllegalStateException(
+                                                    "WebSocket transport has been shut down"));
+                                    return;
+                                }
+                                log.info("Connecting to WebSocket: {}", request.getUrl());
 
-                    WebSocket.Builder builder = httpClient.newWebSocketBuilder();
+                                Request.Builder requestBuilder =
+                                        new Request.Builder().url(request.getUrl());
 
-                    // Set connection timeout
-                    if (request.getConnectTimeout() != null) {
-                        builder.connectTimeout(request.getConnectTimeout());
-                    }
+                                // Add request headers
+                                request.getHeaders().forEach(requestBuilder::addHeader);
 
-                    // Add request headers
-                    request.getHeaders().forEach(builder::header);
+                                Request okRequest = requestBuilder.build();
+                                JdkWebSocketConnection<T> connection =
+                                        new JdkWebSocketConnection<>(request.getUrl(), messageType);
 
-                    // Create connection handler
-                    JdkWebSocketConnection<T> connection =
-                            new JdkWebSocketConnection<>(request.getUrl(), messageType);
+                                connections.add(connection);
+                                pending.put(connection, sink);
+                                sink.onCancel(
+                                        () -> {
+                                            pending.remove(connection);
+                                            connections.remove(connection);
+                                            connection.abort();
+                                        });
 
-                    builder.buildAsync(URI.create(request.getUrl()), connection.getListener())
-                            .whenComplete(
-                                    (webSocket, error) -> {
-                                        if (error != null) {
-                                            log.error(
-                                                    "Failed to connect to WebSocket: {}",
-                                                    request.getUrl(),
-                                                    error);
-                                            sink.error(
-                                                    new WebSocketTransportException(
-                                                            "Failed to connect",
-                                                            error,
-                                                            request.getUrl(),
-                                                            "CONNECTING",
-                                                            request.getHeaders()));
-                                        } else {
-                                            log.info(
-                                                    "WebSocket connected successfully: {}",
-                                                    request.getUrl());
-                                            connection.setWebSocket(webSocket);
-                                            sink.success(connection);
-                                        }
-                                    });
-                });
+                                WebSocket webSocket =
+                                        client.newWebSocket(
+                                                okRequest,
+                                                new WebSocketListener() {
+                                                    @Override
+                                                    public void onOpen(
+                                                            WebSocket webSocket,
+                                                            Response response) {
+                                                        synchronized (connections) {
+                                                            if (closed.get()
+                                                                    || connection.isClosed()) {
+                                                                connection.abort();
+                                                                webSocket.cancel();
+                                                                connections.remove(connection);
+                                                                pending.remove(connection);
+                                                                sink.error(
+                                                                        new IllegalStateException(
+                                                                                "WebSocket"
+                                                                                    + " connection"
+                                                                                    + " cancelled"));
+                                                                return;
+                                                            }
+                                                            connection.setWebSocket(webSocket);
+                                                            pending.remove(connection);
+                                                            sink.success(connection);
+                                                        }
+                                                    }
+
+                                                    @Override
+                                                    public void onMessage(
+                                                            WebSocket webSocket, String text) {
+                                                        log.trace(
+                                                                "Received text message, size: {}"
+                                                                        + " chars",
+                                                                text.length());
+                                                        connection.onMessage(
+                                                                text.getBytes(
+                                                                        StandardCharsets.UTF_8));
+                                                    }
+
+                                                    @Override
+                                                    public void onMessage(
+                                                            WebSocket webSocket, ByteString bytes) {
+                                                        log.trace(
+                                                                "Received binary message, size: {}"
+                                                                        + " bytes",
+                                                                bytes.size());
+                                                        connection.onMessage(bytes.toByteArray());
+                                                    }
+
+                                                    @Override
+                                                    public void onClosing(
+                                                            WebSocket webSocket,
+                                                            int code,
+                                                            String reason) {
+                                                        log.debug(
+                                                                "WebSocket closing: {} [code={},"
+                                                                        + " reason={}]",
+                                                                request.getUrl(),
+                                                                code,
+                                                                reason);
+                                                        webSocket.close(
+                                                                code == 1005
+                                                                        ? CloseInfo.NORMAL_CLOSURE
+                                                                        : code,
+                                                                reason);
+                                                    }
+
+                                                    @Override
+                                                    public void onClosed(
+                                                            WebSocket webSocket,
+                                                            int code,
+                                                            String reason) {
+                                                        log.info(
+                                                                "WebSocket closed: {} [code={},"
+                                                                        + " reason={}]",
+                                                                request.getUrl(),
+                                                                code,
+                                                                reason);
+                                                        connections.remove(connection);
+                                                        connection.onClosed(code, reason);
+                                                    }
+
+                                                    @Override
+                                                    public void onFailure(
+                                                            WebSocket webSocket,
+                                                            Throwable t,
+                                                            Response response) {
+                                                        connections.remove(connection);
+                                                        pending.remove(connection);
+                                                        if (connection.isClosed()) {
+                                                            return;
+                                                        }
+                                                        if (!connection.isInitialized()) {
+                                                            // Connection establishment failed
+                                                            log.error(
+                                                                    "Failed to connect to"
+                                                                            + " WebSocket: {}",
+                                                                    request.getUrl(),
+                                                                    t);
+                                                            sink.error(
+                                                                    new WebSocketTransportException(
+                                                                            "Failed to connect",
+                                                                            t,
+                                                                            request.getUrl(),
+                                                                            "CONNECTING",
+                                                                            request.getHeaders()));
+                                                        } else {
+                                                            // Connection interrupted
+                                                            log.error(
+                                                                    "WebSocket error: {}",
+                                                                    request.getUrl(),
+                                                                    t);
+                                                            connection.onError(t);
+                                                        }
+                                                    }
+                                                });
+                                connection.attachWebSocket(webSocket);
+                            }
+                        });
+        if (request.getConnectTimeout() == null) {
+            return handshake; // Explicit null retains the configured client's timeout policy.
+        }
+        return handshake.timeout(
+                request.getConnectTimeout(),
+                Mono.defer(
+                        () ->
+                                Mono.error(
+                                        new WebSocketTransportException(
+                                                "WebSocket handshake timed out",
+                                                new java.util.concurrent.TimeoutException(),
+                                                request.getUrl(),
+                                                "CONNECTING",
+                                                request.getHeaders()))));
     }
 
     @Override
     public void shutdown() {
-        // JDK HttpClient does not require explicit shutdown
-        // If a custom ExecutorService is used, it may need to be closed
         log.debug("JdkWebSocketTransport shutdown called");
+        synchronized (connections) {
+            if (!closed.compareAndSet(false, true)) {
+                return;
+            }
+            pending.values()
+                    .forEach(
+                            sink ->
+                                    sink.error(
+                                            new IllegalStateException(
+                                                    "WebSocket transport has been shut down")));
+            pending.clear();
+            connections.forEach(JdkWebSocketConnection::abort);
+            connections.clear();
+            if (ownsClient) {
+                client.dispatcher().executorService().shutdown();
+                client.connectionPool().evictAll();
+            }
+        }
     }
 
     /**

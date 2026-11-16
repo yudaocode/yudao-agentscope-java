@@ -34,7 +34,7 @@ import reactor.core.publisher.Mono;
  * <p>Implementations:
  *
  * <ul>
- *   <li>{@code JdkWebSocketTransport} - Based on JDK 11+ HttpClient
+ *   <li>{@code JdkWebSocketTransport} - Based on Java 8 compatible OkHttp backend
  *   <li>{@code OkHttpWebSocketTransport} - Based on OkHttp
  * </ul>
  *
