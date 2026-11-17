@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.agentscope.core.agent.RuntimeContext;
 import io.agentscope.core.message.ToolUseBlock;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -76,7 +77,7 @@ public final class JevConfirmedCalls {
 
     private static String fingerprint(ToolUseBlock call) {
         try {
-            return java.util.HexFormat.of()
+            return HexFormat.of()
                     .formatHex(
                             java.security.MessageDigest.getInstance("SHA-256")
                                     .digest(

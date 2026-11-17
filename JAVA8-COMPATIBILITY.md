@@ -6,7 +6,7 @@
 
 ## 支持范围
 
-当前默认构建包含 56 个 Maven 模块、43 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
+当前默认构建包含 61 个 Maven 模块、47 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
 
 | artifactId | 用途 |
 | --- | --- |
@@ -156,3 +156,20 @@ Nacos Prompt/Skill 扩展按需引入 `agentscope-extensions-nacos-prompt`、`ag
 类全名为 `io.agentscope.core.nacos.prompt.NacosPromptListener`、`io.agentscope.core.nacos.skill.NacosSkillRepository`。提示词模块只需要小型Java8兼容库，不会因此强制依赖整个Agent核心；Skill仓库依赖Agent核心接口。SDK3.3.0保持不降版，测试包含模板、默认值、版本/label、Skill仓库行为，使用模拟AiService；不证明真实Nacos服务的认证、推送和网络行为。
 
 默认reactor新增Nacos聚合器与两个库，56模块、43运行库；前述完整52检查点之后新增XXL36项和Nacos79项均为独立组件回归。运行闭包374jar/157413基础类<=52，API审计111项与XXL批相同，无新增必需JDK成员缺失。
+
+## Jev / OpenAI Decisions 评判
+
+Jev、OpenAI Decisions 评判扩展及两个 starter 也已纳入兼容 BOM：`agentscope-extensions-jev` / `agentscope-jev-spring-boot-starter`、`agentscope-extensions-openai-decisions` / `agentscope-openai-decisions-spring-boot-starter`。按需引入一套库或 starter；配置前缀分别为 `agentscope.jev`、`agentscope.openai-decisions`，API key 使用对应 `api-key` 属性，使用自己的服务时设置 `base-url`。可注入 `JevClient` / `OpenAIDecisionsClient`；未使用时不添加依赖，或设置对应 `enabled=false`。本批两个库与两个 starter 共 241 项 JDK8 测试通过（含本地真实 Chrome DOM 回归），远端付费评判服务未验收。
+
+客户端类全名为 `io.agentscope.extensions.judge.jev.JevClient`、`io.agentscope.extensions.judge.openaidecisions.OpenAIDecisionsClient`。沿用上游 typed decision、上下文和中间件API；Jev浏览器适配需要显式选择Playwright依赖及本地浏览器可执行文件，不能把评判结果理解为绕过核心权限的依据。
+
+默认两库单测Jev128（含1条浏览器条件跳过）、Decisions101，零失败/错误；浏览器用例随后以真实Java8+本机Chrome显式启用通过，因此最终去重报告128+101全部通过。两个新starter5+7项通过；修改starter父POM保留Spring配置处理器并加入Jabel后，全部11个已纳入starter共183项在真实Java8上重跑通过。只修复一处完全限定HexFormat调用以便既有桥接处理，不修改hash算法。
+
+复现本地浏览器门禁（不连接付费模型）：
+
+```bash
+mvn -pl :agentscope-extensions-jev -Dtest=JevBrowserDriverTest \
+  -Djev.browser="/path/to/chrome" -Djvm="$JAVA8_HOME/bin/java" test
+```
+
+该命令操作测试自己启动的127.0.0.1页面，不依赖用户已登录浏览器配置。新reactor61模块/47运行库；此前完整52模块门禁与后续组件门禁分别保留，不合并宣称全61一次完整重跑。

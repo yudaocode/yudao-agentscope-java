@@ -27,7 +27,7 @@ Maven groupId 为 **`cn.iocoder.agentscope`**，artifactId 和 Java 包名沿用
 
 ## 如何使用
 
-当前默认构建包含 56 个 Maven 模块、43 个运行库：核心、Harness、AG-UI、独立 runtime-sandbox、DashScope/OpenAI/OpenAI 官方 Responses/Ollama/Anthropic/Gemini 及其 starter、AG-UI MVC/WebFlux starter、Chat Completions Web SDK 与 starter，以及 JDBC/MySQL/PostgreSQL/Redis/MongoDB 存储，OSS/COS 对象存储、Git/MySQL/PostgreSQL 技能仓库，以及 Mem0/百炼/ReMe Memory、百炼/Dify/Haystack/RAGFlow RAG 与 Quartz/XXL-Job 调度。已纳入真实 JDK 8 回归；其余扩展源码保留，未列入兼容 BOM。详细接入方式见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
+当前默认构建包含 61 个 Maven 模块、47 个运行库：核心、Harness、AG-UI、独立 runtime-sandbox、DashScope/OpenAI/OpenAI 官方 Responses/Ollama/Anthropic/Gemini 及其 starter、AG-UI MVC/WebFlux starter、Chat Completions Web SDK 与 starter，以及 JDBC/MySQL/PostgreSQL/Redis/MongoDB 存储，OSS/COS 对象存储、Git/MySQL/PostgreSQL 技能仓库，以及 Mem0/百炼/ReMe Memory、百炼/Dify/Haystack/RAGFlow RAG 与 Quartz/XXL-Job 调度。已纳入真实 JDK 8 回归；其余扩展源码保留，未列入兼容 BOM。详细接入方式见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
 
 ```xml
 <properties>
@@ -65,6 +65,8 @@ Maven groupId 为 **`cn.iocoder.agentscope`**，artifactId 和 Java 包名沿用
 XXL-Job 扩展按需引入 `agentscope-extensions-scheduler-xxl-job`，默认使用已核验 Java8 字节码的 XXL-Job `2.5.0`；应用自行启动并传入 `XxlJobExecutor`。继承 Boot2 parent 时，还需设置 `<xxl-job.version>2.5.0</xxl-job.version>` 以统一直接管理的版本。客户端注册/任务执行与 Groovy 运行测试在真实 JDK8 上共 36 项通过；远程调度中心未验收。
 
 Nacos Prompt/Skill 扩展按需引入 `agentscope-extensions-nacos-prompt`、`agentscope-extensions-nacos-skill`，同 groupId、版本由 BOM 管理。保留上游 Nacos Client `3.3.0`；应用提供 `com.alibaba.nacos.api.ai.AiService`，分别创建 `NacosPromptListener(aiService)`、`NacosSkillRepository(aiService, namespaceId)`。Prompt/Skill 原有 79 项测试在真实 JDK8 上通过；Nacos A2A 与 Nacos starter 尚未纳入本分支，远程 Nacos 服务需单独验收。
+
+Jev、OpenAI Decisions 评判扩展及两个 starter 也已纳入兼容 BOM：`agentscope-extensions-jev` / `agentscope-jev-spring-boot-starter`、`agentscope-extensions-openai-decisions` / `agentscope-openai-decisions-spring-boot-starter`。按需引入一套库或 starter；配置前缀分别为 `agentscope.jev`、`agentscope.openai-decisions`，API key 使用对应 `api-key` 属性，使用自己的服务时设置 `base-url`。可注入 `JevClient` / `OpenAIDecisionsClient`；未使用时不添加依赖，或设置对应 `enabled=false`。本批两个库与两个 starter 共 241 项 JDK8 测试通过（含本地真实 Chrome DOM 回归），远端付费评判服务未验收。
 
 源码构建使用 JDK 17、Maven 3.9，业务应用继续使用 JDK 8。先安装 `yudao-spring-ai` 的 `main-jdk8` 分支，再在本仓库执行：
 
