@@ -1,4 +1,8 @@
 <!-- YUDAO-COMPATIBILITY-INTRO-BEGIN -->
+
+> 版本命名：保留当前源码基线的官方版本号；共用现代制品不加 JDK 后缀，隔离维护的兼容路线添加 `jdk8` / `jdk17` / `jdk25`。SNAPSHOT 尚未发布 Maven Central。JDK 路线后缀不等于最低字节码版本，框架依赖仍按 Boot 版本选择。
+> 完整版本规则与预览命名见 [VERSIONING.md](VERSIONING.md)。
+
 # yudao-agentscope-java
 
 yudao-agentscope-java 是 [AgentScope Java](https://github.com/agentscope-ai/agentscope-java) 的芋道社区兼容维护版本，并非官方发布。主要补充 **Spring Boot 2.x + JDK 8** 支持；`main` 以 JDK 17 为最低目标，由同一份核心和基础 starter 制品验证 Spring Boot 3.x、4.x 与 JDK 17、25，其他扩展仍需逐项验收。
@@ -10,16 +14,16 @@ yudao-agentscope-java 是 [AgentScope Java](https://github.com/agentscope-ai/age
 | Gitee | [yudao-agentscope-java](https://gitee.com/yudaocode/yudao-agentscope-java) |
 | GitHub | [yudao-agentscope-java](https://github.com/yudaocode/yudao-agentscope-java) |
 
-| 分支 | 目标环境 | 源码开发版本 | 首个正式版本计划 | 状态 |
+| 分支 | 目标环境 | 源码开发版本 | 发布规则 | 状态 |
 | --- | --- | --- | --- | --- |
-| [`main`](https://github.com/yudaocode/yudao-agentscope-java/tree/main) | Boot 3.x / 4.x，JDK 17 / 25 | `3.0.0-SNAPSHOT` | `3.0.0` | 核心和基础 starter 已完成同 jar 四组合验证，其他扩展验收中 |
-| [`main-jdk8`](https://github.com/yudaocode/yudao-agentscope-java/tree/main-jdk8) | Boot 2.x，JDK 8 | `2.0.0-SNAPSHOT` | `2.0.0` | 核心、基础与 DashScope starter 已通过 Boot 2.7/JDK 8 验证，其他扩展移植中 |
+| [`main`](https://github.com/yudaocode/yudao-agentscope-java/tree/main) | Boot 3.x / 4.x，JDK 17 / 25 | `2.1.0-SNAPSHOT` | 官方版本 + 日期 | 核心和基础 starter 已完成同 jar 四组合验证，其他扩展验收中 |
+| [`main-jdk8`](https://github.com/yudaocode/yudao-agentscope-java/tree/main-jdk8) | Boot 2.x，JDK 8 | `2.1.0-jdk8-SNAPSHOT` | 官方版本 + 路线 + 日期 | 核心、基础与 DashScope starter 已通过 Boot 2.7/JDK 8 验证，其他扩展移植中 |
 
-AgentScope 的 `3.x` 由 Boot 3/4 共用，不另设 `4.x` 制品。当前分支：**`main`**。
+AgentScope 的现代制品由 Boot 3/4 共用，版本不带 JDK 后缀。当前分支：**`main`**。
 
 Maven groupId 为 **`cn.iocoder.agentscope`**，artifactId 和 Java 包名沿用官方。同一个应用只选择一条版本线，同一项目的模块使用同一版本；替换已有依赖时，也要移除对应官方 groupId 下的同类模块，避免重复类。
 
-**当前仅提供源码开发版，尚未发布这些坐标到 Maven Central 或远端 SNAPSHOT 仓库。** 正式版本列为计划，不能直接从 Central 下载；下面的 SNAPSHOT 示例须先从源码安装到本地仓库。正式发布后，将版本改为对应 `x.0.0` 即可从 Central 引入。
+**当前仅提供源码开发版，尚未发布这些坐标到 Maven Central 或远端 SNAPSHOT 仓库。** 下面的 SNAPSHOT 示例须先从源码安装到本地仓库。发布版本按 `官方版本[-jdk数字][-preview]-YYYYMMDD` 命名；共用制品省略 JDK，未发布上游基线增加 preview，无同日序号。
 
 ## 如何使用
 
@@ -35,7 +39,7 @@ mvn -pl agentscope-dependencies-bom,agentscope-distribution/agentscope-bom,agent
 
 ```xml
 <properties>
-    <yudao-agentscope.version>3.0.0-SNAPSHOT</yudao-agentscope.version>
+    <yudao-agentscope.version>2.1.0-SNAPSHOT</yudao-agentscope.version>
 </properties>
 <dependencyManagement>
     <dependencies>
@@ -60,7 +64,7 @@ mvn -pl agentscope-dependencies-bom,agentscope-distribution/agentscope-bom,agent
 
 Boot 2.7/JDK 8 分支的支持模块、构建与 HTTP 依赖配置见 [Java 8 使用说明](https://github.com/yudaocode/yudao-agentscope-java/blob/main-jdk8/JAVA8-COMPATIBILITY.md)。
 
-独立沙箱 SDK 通过 `cn.iocoder.agentscope:agentscope-runtime-sandbox-core` 按需引入，版本由 AgentScope BOM 管理。Boot 2 使用 `2.0.0-SNAPSHOT`，Boot 3/4 共用 `3.0.0-SNAPSHOT`；不需要引入整个 AgentScope core。使用兼容 SandboxService 管理服务，或配置本机 Docker 与所需沙箱镜像。源码来源、构建、请求超时及资源关闭说明见 [Runtime sandbox 使用说明](agentscope-runtime-sandbox-core/README_zh.md)。外部平台与具体工具服务需按实际环境配置，不能将本地兼容测试理解为所有外部后端均已验收。
+独立沙箱 SDK 通过 `cn.iocoder.agentscope:agentscope-runtime-sandbox-core` 按需引入，版本由 AgentScope BOM 管理。Boot 2 使用 `2.1.0-jdk8-SNAPSHOT`，Boot 3/4 共用 `2.1.0-SNAPSHOT`；不需要引入整个 AgentScope core。使用兼容 SandboxService 管理服务，或配置本机 Docker 与所需沙箱镜像。源码来源、构建、请求超时及资源关闭说明见 [Runtime sandbox 使用说明](agentscope-runtime-sandbox-core/README_zh.md)。外部平台与具体工具服务需按实际环境配置，不能将本地兼容测试理解为所有外部后端均已验收。
 
 下方逐字保留官方项目原始 README，其中的官方 Maven 坐标和发布状态仅针对上游项目；使用本兼容版时，以本节坐标、版本线和支持范围为准。
 <!-- YUDAO-COMPATIBILITY-INTRO-END -->

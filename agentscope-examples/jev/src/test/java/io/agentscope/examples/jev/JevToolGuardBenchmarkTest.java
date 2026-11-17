@@ -40,6 +40,7 @@ import io.agentscope.core.model.ToolSchema;
 import io.agentscope.core.permission.PermissionContextState;
 import io.agentscope.core.permission.PermissionMode;
 import io.agentscope.core.state.AgentState;
+import io.agentscope.core.state.InMemoryAgentStateStore;
 import io.agentscope.core.tool.ToolBase;
 import io.agentscope.core.tool.ToolCallParam;
 import io.agentscope.core.tool.Toolkit;
@@ -391,6 +392,7 @@ class JevToolGuardBenchmarkTest {
         try (var agent =
                 HarnessAgent.builder()
                         .name("refund-fixture")
+                        .stateStore(new InMemoryAgentStateStore())
                         .workspace(workspace)
                         .threadJournalStore(new InMemoryThreadJournalStore())
                         .model(model)
