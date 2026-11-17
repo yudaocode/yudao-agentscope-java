@@ -77,9 +77,9 @@ final class NotifyingSessionBackend implements SessionBackend {
     }
 
     static void logFailure(SessionKey session, Throwable error) {
-        System.getLogger(NotifyingSessionBackend.class.getName())
+        java.util.logging.Logger.getLogger(NotifyingSessionBackend.class.getName())
                 .log(
-                        System.Logger.Level.WARNING,
+                        java.util.logging.Level.WARNING,
                         "Durable wakeup failed; polling remains active",
                         error);
     }

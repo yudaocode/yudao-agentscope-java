@@ -181,7 +181,9 @@ public final class DurableHttp implements Function<DurableProtocol.Request, Json
         try {
             var response = client.send(builder.build(), HttpResponse.BodyHandlers.ofInputStream());
             try (var stream = response.body()) {
-                byte[] content = stream.readNBytes(ObjectStore.MAX_BYTES + 1);
+                byte[] content =
+                        io.agentscope.core.compat.Java8Platform.readNBytes(
+                                stream, ObjectStore.MAX_BYTES + 1);
                 if (content.length > ObjectStore.MAX_BYTES)
                     throw new DurableException(
                             DurableException.Code.INVALID, "Object response exceeds limit");
@@ -218,7 +220,9 @@ public final class DurableHttp implements Function<DurableProtocol.Request, Json
     static JsonNode request(HttpExchange exchange, Endpoint endpoint) throws IOException {
         if (!"POST".equals(exchange.getRequestMethod()))
             throw new DurableException(DurableException.Code.INVALID, "POST required");
-        byte[] bytes = exchange.getRequestBody().readNBytes(MAX_REQUEST_BYTES + 1);
+        byte[] bytes =
+                io.agentscope.core.compat.Java8Platform.readNBytes(
+                        exchange.getRequestBody(), MAX_REQUEST_BYTES + 1);
         if (bytes.length > MAX_REQUEST_BYTES)
             throw new DurableException(DurableException.Code.INVALID, "Request exceeds size limit");
         var body = DurableJson.parse(new String(bytes, StandardCharsets.UTF_8));

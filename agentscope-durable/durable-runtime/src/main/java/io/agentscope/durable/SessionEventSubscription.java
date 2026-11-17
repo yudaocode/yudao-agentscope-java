@@ -248,18 +248,18 @@ public final class SessionEventSubscription implements AutoCloseable {
         try {
             current.close();
         } catch (Exception error) {
-            System.getLogger(SessionEventSubscription.class.getName())
+            java.util.logging.Logger.getLogger(SessionEventSubscription.class.getName())
                     .log(
-                            System.Logger.Level.WARNING,
+                            java.util.logging.Level.WARNING,
                             "Live event subscription failed to close",
                             error);
         }
     }
 
     private static void logLiveFailure(RuntimeException error) {
-        System.getLogger(SessionEventSubscription.class.getName())
+        java.util.logging.Logger.getLogger(SessionEventSubscription.class.getName())
                 .log(
-                        System.Logger.Level.WARNING,
+                        java.util.logging.Level.WARNING,
                         "Live event subscription unavailable; durable observation continues",
                         error);
     }

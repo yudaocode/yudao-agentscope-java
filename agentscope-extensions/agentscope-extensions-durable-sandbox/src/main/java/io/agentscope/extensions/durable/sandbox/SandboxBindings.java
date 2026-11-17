@@ -694,9 +694,9 @@ public final class SandboxBindings implements AutoCloseable {
         try {
             errors.accept(failure);
         } catch (RuntimeException observerFailure) {
-            System.getLogger(SandboxBindings.class.getName())
+            java.util.logging.Logger.getLogger(SandboxBindings.class.getName())
                     .log(
-                            System.Logger.Level.WARNING,
+                            java.util.logging.Level.WARNING,
                             "Sandbox error observer failed",
                             observerFailure);
         }
@@ -739,9 +739,9 @@ public final class SandboxBindings implements AutoCloseable {
                 cleanupLease = Duration.ofSeconds(30);
         private Consumer<Throwable> errors =
                 failure ->
-                        System.getLogger(SandboxBindings.class.getName())
+                        java.util.logging.Logger.getLogger(SandboxBindings.class.getName())
                                 .log(
-                                        System.Logger.Level.WARNING,
+                                        java.util.logging.Level.WARNING,
                                         "Sandbox lifecycle pending",
                                         failure);
 

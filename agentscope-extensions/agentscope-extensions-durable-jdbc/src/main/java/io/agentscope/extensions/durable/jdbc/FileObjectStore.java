@@ -79,7 +79,10 @@ public final class FileObjectStore implements ObjectStore {
         if (!id().equals(ref.store()))
             throw new DurableException(DurableException.Code.INVALID, "Object store differs");
         try (var input = Files.newInputStream(root.resolve(ref.key()))) {
-            return ObjectStore.verify(id(), ref, input.readNBytes(MAX_BYTES + 1));
+            return ObjectStore.verify(
+                    id(),
+                    ref,
+                    io.agentscope.core.compat.Java8Platform.readNBytes(input, MAX_BYTES + 1));
         } catch (IOException failure) {
             throw new DurableException(
                     DurableException.Code.UNAVAILABLE, "Immutable object unavailable", failure);

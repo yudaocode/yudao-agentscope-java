@@ -234,8 +234,8 @@ public final class RocketMqWorker implements AutoCloseable {
         try {
             value.close();
         } catch (Exception error) {
-            System.getLogger(RocketMqWorker.class.getName())
-                    .log(System.Logger.Level.WARNING, "Cannot close RocketMQ client", error);
+            java.util.logging.Logger.getLogger(RocketMqWorker.class.getName())
+                    .log(java.util.logging.Level.WARNING, "Cannot close RocketMQ client", error);
         }
     }
 
@@ -259,8 +259,11 @@ public final class RocketMqWorker implements AutoCloseable {
         private Duration retryMaximum = Duration.ofSeconds(30);
         private Consumer<Throwable> errors =
                 error ->
-                        System.getLogger(RocketMqWorker.class.getName())
-                                .log(System.Logger.Level.WARNING, "Hands execution failed", error);
+                        java.util.logging.Logger.getLogger(RocketMqWorker.class.getName())
+                                .log(
+                                        java.util.logging.Level.WARNING,
+                                        "Hands execution failed",
+                                        error);
 
         private Builder() {}
 

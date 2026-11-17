@@ -37,7 +37,7 @@ public final class ExecutorHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        try (exchange) {
+        try (java.io.Closeable exchangeCleanup = exchange::close) {
             try {
                 var envelope = DurableHttp.request(exchange, Endpoint.EXECUTOR);
                 String op = envelope.path("operation").asText();

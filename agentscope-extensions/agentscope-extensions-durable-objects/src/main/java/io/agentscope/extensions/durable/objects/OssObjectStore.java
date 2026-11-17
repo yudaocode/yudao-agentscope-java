@@ -68,7 +68,10 @@ public final class OssObjectStore implements ObjectStore {
             throw new IllegalArgumentException("Object store differs");
         try (var object = client.getObject(bucket, reference.key());
                 var input = object.getObjectContent()) {
-            return ObjectStore.verify(id, reference, input.readNBytes(MAX_BYTES + 1));
+            return ObjectStore.verify(
+                    id,
+                    reference,
+                    io.agentscope.core.compat.Java8Platform.readNBytes(input, MAX_BYTES + 1));
         } catch (DurableException failure) {
             throw failure;
         } catch (Exception failure) {

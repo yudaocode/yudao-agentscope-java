@@ -123,7 +123,7 @@ class PublicHttpBoundaryTest {
             server.createContext(
                     "/api",
                     exchange -> {
-                        try (exchange) {
+                        try (java.io.Closeable exchangeCleanup = exchange::close) {
                             var request =
                                     DurableJson.convert(
                                             DurableHttp.request(

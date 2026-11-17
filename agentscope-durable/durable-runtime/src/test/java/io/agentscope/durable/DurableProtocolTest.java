@@ -357,7 +357,8 @@ class DurableProtocolTest {
                             }
                         };
                 var workerLoader =
-                        new URLClassLoader(new URL[0], ClassLoader.getPlatformClassLoader())) {
+                        new URLClassLoader(
+                                new URL[0], ClassLoader.getSystemClassLoader().getParent())) {
             var thread = Thread.currentThread();
             var previous = thread.getContextClassLoader();
             try {

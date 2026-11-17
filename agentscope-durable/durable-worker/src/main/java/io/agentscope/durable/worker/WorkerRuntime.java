@@ -401,8 +401,11 @@ public final class WorkerRuntime implements AutoCloseable {
                                     "Worker operation pending: " + execution,
                                     error));
         } catch (RuntimeException reporting) {
-            System.getLogger(WorkerRuntime.class.getName())
-                    .log(System.Logger.Level.WARNING, "Worker error observer failed", reporting);
+            java.util.logging.Logger.getLogger(WorkerRuntime.class.getName())
+                    .log(
+                            java.util.logging.Level.WARNING,
+                            "Worker error observer failed",
+                            reporting);
         }
     }
 
@@ -471,9 +474,9 @@ public final class WorkerRuntime implements AutoCloseable {
         private int recoveryParallelism = 2;
         private Consumer<Throwable> errors =
                 error ->
-                        System.getLogger(WorkerRuntime.class.getName())
+                        java.util.logging.Logger.getLogger(WorkerRuntime.class.getName())
                                 .log(
-                                        System.Logger.Level.WARNING,
+                                        java.util.logging.Level.WARNING,
                                         "Worker operation pending",
                                         error);
 

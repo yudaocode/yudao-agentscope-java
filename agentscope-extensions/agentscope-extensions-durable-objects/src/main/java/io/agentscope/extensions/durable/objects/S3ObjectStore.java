@@ -68,7 +68,10 @@ public final class S3ObjectStore implements ObjectStore {
         try (var input =
                 client.getObject(
                         GetObjectArgs.builder().bucket(bucket).object(reference.key()).build())) {
-            return ObjectStore.verify(id, reference, input.readNBytes(MAX_BYTES + 1));
+            return ObjectStore.verify(
+                    id,
+                    reference,
+                    io.agentscope.core.compat.Java8Platform.readNBytes(input, MAX_BYTES + 1));
         } catch (DurableException failure) {
             throw failure;
         } catch (Exception failure) {

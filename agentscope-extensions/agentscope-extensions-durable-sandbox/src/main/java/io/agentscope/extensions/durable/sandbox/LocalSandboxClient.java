@@ -335,7 +335,9 @@ public final class LocalSandboxClient implements SandboxClient<SandboxClientOpti
 
     private static String read(Path path, int limit) throws IOException {
         try (var input = Files.newInputStream(path)) {
-            return new String(input.readNBytes(limit), StandardCharsets.UTF_8);
+            return new String(
+                    io.agentscope.core.compat.Java8Platform.readNBytes(input, limit),
+                    StandardCharsets.UTF_8);
         }
     }
 }

@@ -38,6 +38,15 @@
             <groupId>com.networknt</groupId>
             <artifactId>json-schema-validator</artifactId>
         </dependency>
+        <dependency>
+            <groupId>cn.iocoder.agentscope</groupId>
+            <artifactId>agentscope-java8-compat</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.iocoder.spring-ai</groupId>
+            <artifactId>spring-ai-itu-compat</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

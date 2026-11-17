@@ -68,11 +68,11 @@ public class HarnessExternalToolProcessRecoveryTest {
     private void runProcess(String phase) throws Exception {
         String executable =
                 System.getProperty("os.name").startsWith("Windows") ? "java.exe" : "java";
-        Path java = Path.of(System.getProperty("java.home"), "bin", executable);
+        Path javaExecutable = Path.of(System.getProperty("java.home"), "bin", executable);
         Path output = root.resolve(phase + ".log");
         Process process =
                 new ProcessBuilder(
-                                java.toString(),
+                                javaExecutable.toString(),
                                 "-Dagentscope.state.home="
                                         + root.resolve("native-state").toAbsolutePath(),
                                 "-cp",

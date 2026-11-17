@@ -43,7 +43,7 @@ public final class DurableRuntimeHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        try (exchange) {
+        try (java.io.Closeable exchangeCleanup = exchange::close) {
             try {
                 var envelope = DurableHttp.request(exchange, DurableProtocol.Endpoint.USER);
                 var request = DurableJson.convert(envelope, DurableProtocol.Request.class);

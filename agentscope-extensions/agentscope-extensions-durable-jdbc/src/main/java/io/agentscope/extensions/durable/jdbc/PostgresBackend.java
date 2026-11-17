@@ -54,9 +54,9 @@ public final class PostgresBackend {
         private boolean initializeSchema;
         private BiConsumer<SessionKey, Throwable> errors =
                 (session, error) ->
-                        System.getLogger(PostgresBackend.class.getName())
+                        java.util.logging.Logger.getLogger(PostgresBackend.class.getName())
                                 .log(
-                                        System.Logger.Level.WARNING,
+                                        java.util.logging.Level.WARNING,
                                         "Durable notification failed; polling remains active",
                                         error);
 

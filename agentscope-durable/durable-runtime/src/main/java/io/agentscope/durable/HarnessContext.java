@@ -135,9 +135,9 @@ public final class HarnessContext {
                                 input.type(),
                                 input.data()));
             } catch (RuntimeException error) {
-                System.getLogger(HarnessContext.class.getName())
+                java.util.logging.Logger.getLogger(HarnessContext.class.getName())
                         .log(
-                                System.Logger.Level.WARNING,
+                                java.util.logging.Level.WARNING,
                                 "Live event delivery failed; durable execution continues",
                                 error);
             }

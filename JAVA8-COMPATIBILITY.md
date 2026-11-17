@@ -196,3 +196,24 @@ This gate includes the previously separate SDK/starter/XXL/Nacos/Judge/Channels 
 Runtime dependency classpaths were regenerated after clean:69 files,389jars,158554 effective base classes, none above major52.
 The independent native8 static member audit retains111 reviewed optional third-party references; it is not silently converted into a zero-finding claim.
 Live platform credentials, the excluded27 library/extension/application directories and all sandbox/Kubernetes backends are not covered by this gate.
+
+## Durable Java8 modules
+
+Default scope expands69→82 modules,65 runtime libraries.
+The compatibility BOM now includes runtime/worker, Harness/Claude/AG-UI adapters and JDBC/HTTP/sandbox/RocketMQ/objects/MCP extensions.
+They retain upstream APIs and state/protocol formats; Java8 business code uses ordinary types instead of var/record/List.of syntax.
+The runtime depends on the independent Java8 and ITU compatibility libraries, not on AgentScope core.
+JDK9+ logging, bounded stream reads, HttpExchange resource closing and test-only classloader/process calls use Java8 equivalents without weakening assertions.
+
+Select `agentscope-extensions-durable-jdbc` for `LocalBackend.open(Paths.get("./data/durable"))` (SQLite plus immutable files), and `-http` for the HTTP backend/client.
+The caller owns backend/runtime/executor lifetimes and configures the HTTP authorizer.
+Immutable object scope values are64-character hashes; use the protocol's scope/hash helpers.
+MinIO8.6.0 and OSS3.18.5 remain available with the existing Java8 OkHttp4.12 route; their SDK dependencies are optional and consumers select them explicitly.
+Durable remains an upstream experimental API and its deployment skip setting is retained; these modules currently require source installation.
+See [the Boot2 consumer](compatibility-tests/boot2-durable) for native parent/BOM/version alignment and code.
+
+All11 added runtime modules passed366 native8 component tests, zero failures/errors/skips, including actual separate-JVM recovery, local HTTP and process sandbox contracts.
+A complete fresh82-module serial clean install then passed10724 cases on Java1.8.0_472, zero failures/errors,71 conditional skips.
+The separate native Boot2 consumer passed2 cases: persistence/object integrity across context restarts and loopback HTTP.
+This does not claim real S3/OSS/RocketMQ/remote MCP accounts or every sandbox backend.
+After clean, runtime scope82 classpaths/409jars/170254 effective base classes contains no major>52; the static API audit retains111 reviewed third-party findings, with no new missing member signature compared with the69-module checkpoint.

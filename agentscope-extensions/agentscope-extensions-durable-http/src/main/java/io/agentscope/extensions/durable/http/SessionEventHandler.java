@@ -64,7 +64,7 @@ public final class SessionEventHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         boolean streaming = false;
-        try (exchange) {
+        try (java.io.Closeable exchangeCleanup = exchange::close) {
             try {
                 if (!"GET".equals(exchange.getRequestMethod()))
                     throw new DurableException(DurableException.Code.INVALID, "GET required");

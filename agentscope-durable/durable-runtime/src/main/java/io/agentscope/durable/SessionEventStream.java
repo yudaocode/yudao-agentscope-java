@@ -251,18 +251,18 @@ public final class SessionEventStream implements AutoCloseable {
         try {
             resource.close();
         } catch (Exception error) {
-            System.getLogger(SessionEventStream.class.getName())
+            java.util.logging.Logger.getLogger(SessionEventStream.class.getName())
                     .log(
-                            System.Logger.Level.WARNING,
+                            java.util.logging.Level.WARNING,
                             "Live event subscription failed to close",
                             error);
         }
     }
 
     private static void logLiveFailure(RuntimeException error) {
-        System.getLogger(SessionEventStream.class.getName())
+        java.util.logging.Logger.getLogger(SessionEventStream.class.getName())
                 .log(
-                        System.Logger.Level.WARNING,
+                        java.util.logging.Level.WARNING,
                         "Live event subscription unavailable; durable streaming continues",
                         error);
     }

@@ -151,9 +151,9 @@ public final class RocketMqWakeups implements Wakeups, AutoCloseable {
         try {
             errors.accept(error);
         } catch (RuntimeException reportingError) {
-            System.getLogger(RocketMqWakeups.class.getName())
+            java.util.logging.Logger.getLogger(RocketMqWakeups.class.getName())
                     .log(
-                            System.Logger.Level.WARNING,
+                            java.util.logging.Level.WARNING,
                             "Wakeup error callback failed",
                             reportingError);
         }

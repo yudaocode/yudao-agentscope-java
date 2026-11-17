@@ -505,7 +505,13 @@ class SandboxBindingsTest {
                     var process =
                             new ProcessBuilder("sh", "-c", command)
                                     .directory(root().toFile())
-                                    .redirectError(ProcessBuilder.Redirect.DISCARD)
+                                    .redirectError(
+                                            ProcessBuilder.Redirect.to(
+                                                    new java.io.File(
+                                                            System.getProperty("os.name")
+                                                                            .startsWith("Windows")
+                                                                    ? "NUL"
+                                                                    : "/dev/null")))
                                     .redirectOutput(output.toFile())
                                     .start();
                     if (!process.waitFor(timeout, TimeUnit.SECONDS)) {

@@ -769,9 +769,9 @@ public final class DurableRuntime implements AutoCloseable {
         try {
             errors.accept(session, error);
         } catch (RuntimeException reportingError) {
-            System.getLogger(DurableRuntime.class.getName())
+            java.util.logging.Logger.getLogger(DurableRuntime.class.getName())
                     .log(
-                            System.Logger.Level.WARNING,
+                            java.util.logging.Level.WARNING,
                             "Durable error callback failed",
                             reportingError);
         }
@@ -888,8 +888,11 @@ public final class DurableRuntime implements AutoCloseable {
         private int observerParallelism = 2;
         private BiConsumer<SessionKey, Throwable> errors =
                 (key, e) ->
-                        System.getLogger(DurableRuntime.class.getName())
-                                .log(System.Logger.Level.WARNING, "Durable invocation failed", e);
+                        java.util.logging.Logger.getLogger(DurableRuntime.class.getName())
+                                .log(
+                                        java.util.logging.Level.WARNING,
+                                        "Durable invocation failed",
+                                        e);
 
         public Builder backend(SessionBackend value) {
             backend = value;

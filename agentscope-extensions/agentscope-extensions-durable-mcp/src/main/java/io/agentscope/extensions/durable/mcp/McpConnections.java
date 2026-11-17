@@ -218,8 +218,8 @@ public final class McpConnections implements AutoCloseable {
                 if (client != null) client.close();
             }
         } catch (RuntimeException failure) {
-            System.getLogger(McpConnections.class.getName())
-                    .log(System.Logger.Level.WARNING, "MCP connection close failed", failure);
+            java.util.logging.Logger.getLogger(McpConnections.class.getName())
+                    .log(java.util.logging.Level.WARNING, "MCP connection close failed", failure);
         } finally {
             synchronized (this) {
                 entries.remove(entry);

@@ -225,7 +225,7 @@ class DurableHttpTest {
         server.createContext(
                 "/broken",
                 exchange -> {
-                    try (exchange) {
+                    try (java.io.Closeable exchangeCleanup = exchange::close) {
                         byte[] bytes =
                                 "{\"version\":\"durable.v1\"}".getBytes(StandardCharsets.UTF_8);
                         exchange.sendResponseHeaders(200, bytes.length);

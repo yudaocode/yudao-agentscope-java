@@ -260,8 +260,11 @@ final class RocketMqLoop implements AutoCloseable {
         try {
             errors.accept(error);
         } catch (RuntimeException reporting) {
-            System.getLogger(RocketMqLoop.class.getName())
-                    .log(System.Logger.Level.WARNING, "Execution error handler failed", reporting);
+            java.util.logging.Logger.getLogger(RocketMqLoop.class.getName())
+                    .log(
+                            java.util.logging.Level.WARNING,
+                            "Execution error handler failed",
+                            reporting);
         }
     }
 

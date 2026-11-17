@@ -87,7 +87,7 @@ public final class RecordObjectStore implements ObjectStore {
                         if (decoded.length != Math.min(CHUNK_BYTES, reference.size() - offset))
                             throw new DurableException(
                                     DurableException.Code.INVALID, "Object chunk size differs");
-                        bytes.writeBytes(decoded);
+                        bytes.write(decoded, 0, decoded.length);
                     }
                     return ObjectStore.verify(id(), reference, bytes.toByteArray());
                 });

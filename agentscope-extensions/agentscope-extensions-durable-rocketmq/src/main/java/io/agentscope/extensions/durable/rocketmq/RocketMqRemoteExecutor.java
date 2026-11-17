@@ -187,8 +187,8 @@ public final class RocketMqRemoteExecutor implements ManagedExecutor {
         try {
             value.close();
         } catch (Exception error) {
-            System.getLogger(RocketMqRemoteExecutor.class.getName())
-                    .log(System.Logger.Level.WARNING, "Cannot close RocketMQ client", error);
+            java.util.logging.Logger.getLogger(RocketMqRemoteExecutor.class.getName())
+                    .log(java.util.logging.Level.WARNING, "Cannot close RocketMQ client", error);
         }
     }
 
@@ -203,8 +203,11 @@ public final class RocketMqRemoteExecutor implements ManagedExecutor {
         private Duration retry = Duration.ofSeconds(5);
         private Consumer<Throwable> errors =
                 error ->
-                        System.getLogger(RocketMqRemoteExecutor.class.getName())
-                                .log(System.Logger.Level.WARNING, "Queued execution failed", error);
+                        java.util.logging.Logger.getLogger(RocketMqRemoteExecutor.class.getName())
+                                .log(
+                                        java.util.logging.Level.WARNING,
+                                        "Queued execution failed",
+                                        error);
 
         private Builder() {}
 

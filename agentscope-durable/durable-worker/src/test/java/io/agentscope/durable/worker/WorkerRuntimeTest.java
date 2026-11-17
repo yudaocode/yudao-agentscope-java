@@ -230,7 +230,8 @@ class WorkerRuntimeTest {
                                             DurableException.class,
                                             () -> worker.localExecutor().startExecution(request))
                                     .code());
-                    assertTrue(store.claim(request, "competitor", Duration.ofSeconds(1)).isEmpty());
+                    assertFalse(
+                            store.claim(request, "competitor", Duration.ofSeconds(1)).isPresent());
                 } finally {
                     finish.countDown();
                 }
@@ -288,7 +289,7 @@ class WorkerRuntimeTest {
             store.defer(work, Duration.ofSeconds(5), Duration.ofMinutes(1));
             var replacement = new TransactionalExecutionStore(records);
             assertTrue(replacement.ready(true, 10).isEmpty());
-            assertTrue(replacement.claim(request, "second", Duration.ofSeconds(5)).isEmpty());
+            assertFalse(replacement.claim(request, "second", Duration.ofSeconds(5)).isPresent());
             assertEquals(1, replacement.statistics(10).unknown());
             replacement.cancel(request);
             assertEquals(1, replacement.ready(true, 10).size());

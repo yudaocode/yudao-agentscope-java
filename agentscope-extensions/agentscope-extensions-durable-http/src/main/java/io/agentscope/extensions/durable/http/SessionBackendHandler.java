@@ -77,7 +77,7 @@ public final class SessionBackendHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        try (exchange) {
+        try (java.io.Closeable exchangeCleanup = exchange::close) {
             try {
                 if (!"POST".equals(exchange.getRequestMethod())) {
                     object(exchange);
@@ -358,7 +358,9 @@ public final class SessionBackendHandler implements HttpHandler {
         String operation = method.equals("PUT") ? "putObject" : "readObject";
         authorizer.authorize(exchange, operation, key);
         if (method.equals("PUT")) {
-            byte[] bytes = exchange.getRequestBody().readNBytes(ObjectStore.MAX_BYTES + 1);
+            byte[] bytes =
+                    io.agentscope.core.compat.Java8Platform.readNBytes(
+                            exchange.getRequestBody(), ObjectStore.MAX_BYTES + 1);
             if (bytes.length > ObjectStore.MAX_BYTES)
                 throw new DurableException(
                         DurableException.Code.INVALID, "Object exceeds size limit");
