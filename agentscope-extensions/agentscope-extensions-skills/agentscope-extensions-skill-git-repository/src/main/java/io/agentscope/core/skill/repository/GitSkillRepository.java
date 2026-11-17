@@ -796,7 +796,7 @@ public class GitSkillRepository implements AgentSkillRepository {
             return false;
         }
 
-        @Override
+        // JGit 5.13 has no showDuration callback; retain this no-op for newer API shapes.
         public void showDuration(boolean enabled) {
             // Not used in this implementation
         }

@@ -6,7 +6,7 @@
 
 ## 支持范围
 
-当前默认构建包含 41 个 Maven 模块、30 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
+当前默认构建包含 47 个 Maven 模块、35 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
 
 | artifactId | 用途 |
 | --- | --- |
@@ -104,7 +104,7 @@ agentscope:
 
 ## 当前验证边界
 
-41 模块在真实 JDK 8 上执行完整默认 install：8906 项（按 XML 汇总，避免嵌套测试统计重复），零失败/错误、67 次条件跳过。包含日期解析与 Bouncy Castle Java8 链接回归。Harness 与 AG-UI 在本地测试；第三方模型响应使用本地模拟，真实付费模型、全部 Kubernetes/远程沙箱后端未验收。默认运行依赖排除了 MongoDB 的 Java17 record codec，但静态 API 审计仍能发现第三方可选现代实现；字节码扫描通过不等于每条可选路径兼容。
+47 模块在真实 JDK 8 上执行完整默认 clean install：9180 项（按 XML 汇总，避免嵌套测试统计重复），零失败/错误、67 次条件跳过。包含日期解析与 Bouncy Castle Java8 链接回归。Harness 与 AG-UI 在本地测试；第三方模型响应使用本地模拟，真实付费模型、全部 Kubernetes/远程沙箱后端未验收。默认运行依赖排除了 MongoDB 的 Java17 record codec，但静态 API 审计仍能发现第三方可选现代实现；字节码扫描通过不等于每条可选路径兼容。
 
 ## Memory、RAG 与调度扩展
 
@@ -113,3 +113,9 @@ agentscope:
 Java8源码构建采用串行Maven（默认或 `-T1`），避免Jabel并发初始化时的附加代理竞态；业务运行时不需要Jabel。
 
 百炼SDK传递的旧BC1.78.1在Java8的AES-GCM ByteBuffer调用中产生NoSuchMethodError；兼容BOM统一bcprov/bcpkix/bcutil-jdk18on为1.87，并以堆/直接缓冲区的认证加密往返测试验证。构建报告的字节码通过不能替代这类API链接验证。
+
+## 对象存储与技能仓库
+
+BOM现管理 `agentscope-extensions-oss`、`agentscope-extensions-cos`、`agentscope-extensions-skill-git-repository`、`agentscope-extensions-skill-mysql-repository`、`agentscope-extensions-skill-postgresql-repository`。按需添加对应artifactId，版本沿用本分支；对象存储扩展配合core/Harness，技能仓库配合core。服务端地址、凭据和数据库连接由应用提供，当前验证使用本地Git仓库、模拟对象存储客户端与JDBC测试。
+
+Git扩展使用JGit `5.13.5.202508271544-r`，这是已核验的Java8维护路线；保持源码基线OSS3.18.5、COS5.6.245、MySQL9.6.0、PostgreSQL42.7.11。JGit7.x需要现代JDK，Java8分支保留现有技能仓库API并适配进度回调。参见[Eclipse5.13.5说明](https://projects.eclipse.org/projects/technology.jgit/releases/5.13.5)。
