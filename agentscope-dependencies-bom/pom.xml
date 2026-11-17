@@ -102,7 +102,10 @@
         <redisson.version>4.2.0</redisson.version>
         <lettuce.version>6.4.2.RELEASE</lettuce.version>
         <mongodb-driver.version>5.3.1</mongodb-driver.version>
-        <testcontainers.version>1.21.4</testcontainers.version></properties>
+        <testcontainers.version>1.21.4</testcontainers.version><bailian.version>2.14.5</bailian.version>
+        <quartz.version>2.4.1</quartz.version>
+        <bouncycastle.version>1.87</bouncycastle.version>
+        </properties>
 
     <dependencyManagement>
         <dependencies>
@@ -310,6 +313,34 @@
                 <artifactId>mongodb-driver-sync</artifactId>
                 <version>${mongodb-driver.version}</version>
             <!--Native java.lang.Record codec requires Java17; Java8 uses the standard BSON/POJO codecs.--><exclusions><exclusion><groupId>org.mongodb</groupId><artifactId>bson-record-codec</artifactId></exclusion></exclusions></dependency>
+
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.aliyun</groupId>
+                <artifactId>bailian20231229</artifactId>
+                <version>${bailian.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.quartz-scheduler</groupId>
+                <artifactId>quartz</artifactId>
+                <version>${quartz.version}</version>
+            </dependency>
 
             </dependencies>
     </dependencyManagement>

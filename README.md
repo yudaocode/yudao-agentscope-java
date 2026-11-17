@@ -27,7 +27,7 @@ Maven groupId 为 **`cn.iocoder.agentscope`**，artifactId 和 Java 包名沿用
 
 ## 如何使用
 
-当前默认构建包含 29 个 Maven 模块、21 个运行库：核心、Harness、AG-UI、独立 runtime-sandbox、DashScope/OpenAI/Ollama/Anthropic/Gemini 及其 starter，以及 JDBC/MySQL/PostgreSQL/Redis/MongoDB 存储。已纳入真实 JDK 8 回归；其余扩展源码保留，未列入兼容 BOM。详细接入方式见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
+当前默认构建包含 41 个 Maven 模块、30 个运行库：核心、Harness、AG-UI、独立 runtime-sandbox、DashScope/OpenAI/Ollama/Anthropic/Gemini 及其 starter，以及 JDBC/MySQL/PostgreSQL/Redis/MongoDB 存储，以及 Mem0/百炼/ReMe Memory、百炼/Dify/Haystack/RAGFlow RAG 与 Quartz 调度。已纳入真实 JDK 8 回归；其余扩展源码保留，未列入兼容 BOM。详细接入方式见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
 
 ```xml
 <properties>

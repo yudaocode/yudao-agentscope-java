@@ -30,5 +30,5 @@
     <modules>
         <module>agentscope-spring-boot-starters</module>
         <module>agentscope-extensions-model</module>
-    <module>agentscope-extensions-protocol</module><module>agentscope-extensions-jdbc</module><module>agentscope-extensions-redis</module><module>agentscope-extensions-mongodb</module><module>agentscope-extensions-mysql</module><module>agentscope-extensions-postgresql</module></modules>
+    <module>agentscope-extensions-protocol</module><module>agentscope-extensions-jdbc</module><module>agentscope-extensions-redis</module><module>agentscope-extensions-mongodb</module><module>agentscope-extensions-mysql</module><module>agentscope-extensions-postgresql</module><module>agentscope-extensions-mem</module><module>agentscope-extensions-rag</module><module>agentscope-extensions-scheduler</module></modules>
 </project>
