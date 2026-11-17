@@ -217,3 +217,49 @@ A complete fresh82-module serial clean install then passed10724 cases on Java1.8
 The separate native Boot2 consumer passed2 cases: persistence/object integrity across context restarts and loopback HTTP.
 This does not claim real S3/OSS/RocketMQ/remote MCP accounts or every sandbox backend.
 After clean, runtime scope82 classpaths/409jars/170254 effective base classes contains no major>52; the static API audit retains111 reviewed third-party findings, with no new missing member signature compared with the69-module checkpoint.
+
+## E2B backend on Java 8
+
+Add these dependencies under the compatibility BOM. Harness is intentionally `provided` by the E2B backend, so applications must include it explicitly:
+
+```xml
+<dependency>
+    <groupId>cn.iocoder.agentscope</groupId>
+    <artifactId>agentscope-extensions-sandbox-e2b</artifactId>
+</dependency>
+<dependency>
+    <groupId>cn.iocoder.agentscope</groupId>
+    <artifactId>agentscope-harness</artifactId>
+</dependency>
+```
+
+Use the existing public API:
+
+```java
+E2bSandboxClientOptions options = new E2bSandboxClientOptions();
+options.setApiKey(System.getenv("E2B_API_KEY"));
+options.setTemplateId("base");
+E2bSandboxClient client = new E2bSandboxClient(options, null);
+try (Sandbox sandbox = client.create(new WorkspaceSpec(), null, options)) {
+    sandbox.start();
+    // Bind the sandbox to your Harness workflow using the upstream API.
+}
+```
+
+The example types are in `io.agentscope.extensions.sandbox.e2b` and `io.agentscope.harness.agent.sandbox`. Real execution requires your E2B account, template and endpoint configuration. The Java8 port retains the original protocol and limits, replacing only newer JDK stream APIs with the existing Java8 compatibility helpers. Protobuf4.35.0 and OkHttp4.12.0 are retained.
+
+When inheriting Boot2.7.18's parent, use the existing Jackson/HTTP/Logback overrides plus `okhttp.version=4.12.0`, `reactor-bom.version=2024.0.18`, and `commons-lang3.version=3.20.0`; a BOM import cannot replace inherited direct management. The complete independent consumer POM is [boot2-e2b](compatibility-tests/boot2-e2b/pom.xml).
+
+After installing the default reactor with JDK17 build tools and native8 tests, run:
+
+```sh
+./mvnw -f compatibility-tests/boot2-e2b/pom.xml verify \
+  -Dcompat.test.jvm="$JAVA8_HOME/bin/java"
+```
+
+No E2B account is used by that fixture: it checks the installed jar, Boot2 context/JSON setup, a real local platform HTTP request with dummy credentials, and the bounded snapshot reader. Upstream live-cloud tests remain conditional and are reported as skipped when `E2B_API_KEY` is absent. Kubernetes, AgentRun and Daytona remain outside this Java8 build; this port does not certify those backends.
+
+
+The E2B component gate passed196 native8 executions, zero failures/errors,9 upstream live-cloud skips. The complete84-module serial clean install passed10920 executions on actual Java1.8.0_472, zero failures/errors,80 conditional skips. The fully disabled Docker sandbox class remains a skipped gap. An independent Boot2 parent consumer passed3 native8 cases with zero skips.
+
+Runtime scan including the standalone consumer:85 classpath files,413 jars,170535 effective base classes, none above Java8 major52. The static API report keeps111 reviewed third-party findings; its missing member/class signature set is unchanged from the82-module checkpoint. All sandbox backends and live E2B acceptance remain outside this result.

@@ -27,11 +27,13 @@ Maven groupId 为 **`cn.iocoder.agentscope`**，artifactId 和 Java 包名沿用
 
 2026-11-17 前一检查点 **69 模块完整串行 `clean install`** 已在原生 JDK8 上跑完：10,358 项，失败/错误均为 0，条件跳过 71 项。此前分批门禁继续保留；本次提供全默认范围的一次完整检查点，不包含仍被排除的可选扩展和真实平台账号验收。
 
-当前 **82 模块完整原生 JDK8 `clean install`** 已通过：10,724 项，零失败/错误，71 项条件跳过。新增 Durable runtime/worker、Harness/Claude/AG-UI 适配器及 JDBC/HTTP/sandbox/RocketMQ/objects/MCP 扩展；11 个运行库单独通过 366 项，另有 2 项原生 Boot2 消费测试。
+此前 **82 模块完整原生 JDK8 `clean install`** 已通过：10,724 项，零失败/错误，71 项条件跳过。新增 Durable runtime/worker、Harness/Claude/AG-UI 适配器及 JDBC/HTTP/sandbox/RocketMQ/objects/MCP 扩展；11 个运行库单独通过 366 项，另有 2 项原生 Boot2 消费测试。
+
+当前默认范围已扩为 **84 模块、66 个运行库**，新增 **E2B 沙箱后端**。完整原生JDK8 `clean install` 通过 **10920项**，零失败/错误，80项条件跳过；E2B组件196项中9项真实云条件跳过，独立Boot2消费3项全部通过、零跳过。使用时按BOM引入 `agentscope-extensions-sandbox-e2b`，并显式引入其provided依赖 `agentscope-harness`；完整配置、Java调用示例与Boot2父POM覆盖见 [Java8兼容说明](JAVA8-COMPATIBILITY.md#e2b-backend-on-java-8) 和 [独立消费者](compatibility-tests/boot2-e2b)。真实E2B云环境及其他未列入默认构建的沙箱后端尚未验收。
 
 ## 如何使用
 
-当前默认构建包含 82 个 Maven 模块、65 个运行库：核心、Harness、AG-UI、独立 runtime-sandbox、DashScope/OpenAI/OpenAI 官方 Responses/Ollama/Anthropic/Gemini 及其 starter、AG-UI MVC/WebFlux starter、Chat Completions Web SDK 与 starter，以及 JDBC/MySQL/PostgreSQL/Redis/MongoDB 存储，OSS/COS 对象存储、Git/MySQL/PostgreSQL 技能仓库，以及 Mem0/百炼/ReMe Memory、百炼/Dify/Haystack/RAGFlow RAG 与 Quartz/XXL-Job 调度。已纳入真实 JDK 8 回归；其余扩展源码保留，未列入兼容 BOM。详细接入方式见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
+当前默认构建包含 84 个 Maven 模块、66 个运行库：核心、Harness、AG-UI、独立 runtime-sandbox、DashScope/OpenAI/OpenAI 官方 Responses/Ollama/Anthropic/Gemini 及其 starter、AG-UI MVC/WebFlux starter、Chat Completions Web SDK 与 starter，以及 JDBC/MySQL/PostgreSQL/Redis/MongoDB 存储，OSS/COS 对象存储、Git/MySQL/PostgreSQL 技能仓库，以及 Mem0/百炼/ReMe Memory、百炼/Dify/Haystack/RAGFlow RAG 与 Quartz/XXL-Job 调度。已纳入真实 JDK 8 回归；其余扩展源码保留，未列入兼容 BOM。详细接入方式见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
 
 Durable 按需引入 `agentscope-durable-runtime`、`agentscope-durable-worker` 或 `agentscope-extensions-durable-jdbc` / `-http` 等（同 groupId、由 BOM 管理）。`LocalBackend.open(Paths.get("./data/durable"))` 提供 SQLite 和不可变文件存储；业务保存并关闭返回的 `SessionBackend`。不要在 JDK8 业务源码中直接使用上游示例里的 `var`、`record` 或 `List.of`。完整原生 Boot2 示例见 [boot2-durable](compatibility-tests/boot2-durable)。对象存储的 MinIO/OSS SDK 为可选依赖，使用对应后端时需自行按 BOM 引入。
 

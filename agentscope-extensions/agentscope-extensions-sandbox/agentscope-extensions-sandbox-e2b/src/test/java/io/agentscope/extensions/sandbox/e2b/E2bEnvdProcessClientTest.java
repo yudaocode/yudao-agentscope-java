@@ -986,7 +986,7 @@ class E2bEnvdProcessClientTest {
     private static byte[] concatFrames(byte[]... frames) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         for (byte[] frame : frames) {
-            out.writeBytes(frame);
+            out.write(frame, 0, frame.length);
         }
         return out.toByteArray();
     }
@@ -995,7 +995,7 @@ class E2bEnvdProcessClientTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         for (String json : jsons) {
             byte[] frame = connectFrame(json);
-            out.writeBytes(frame);
+            out.write(frame, 0, frame.length);
         }
         return out.toByteArray();
     }

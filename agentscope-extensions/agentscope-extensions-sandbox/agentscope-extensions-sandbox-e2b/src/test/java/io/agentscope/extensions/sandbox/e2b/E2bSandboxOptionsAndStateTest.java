@@ -555,7 +555,7 @@ class E2bSandboxOptionsAndStateTest {
             java.lang.reflect.Method m = E2bSandbox.class.getDeclaredMethod("doPersistWorkspace");
             m.setAccessible(true);
             try (java.io.InputStream in = (java.io.InputStream) m.invoke(sandbox)) {
-                byte[] bytes = in.readAllBytes();
+                byte[] bytes = io.agentscope.core.compat.Java8Platform.readAllBytes(in);
                 String decoded = E2bSnapshotRefs.decodeSnapshotIdIfPresent(bytes);
                 assertEquals("team/agentscope-abc:tag", decoded);
                 assertEquals(List.of("team/agentscope-abc:tag"), state.getSnapshotIds());

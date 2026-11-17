@@ -220,7 +220,7 @@ public class E2bSandbox extends AbstractBaseSandbox implements SandboxFileTransf
 
     @Override
     protected void doHydrateWorkspace(InputStream archive) throws Exception {
-        byte[] all = archive.readAllBytes();
+        byte[] all = io.agentscope.core.compat.Java8Platform.readAllBytes(archive);
         if (all.length == 0) {
             // Volume-backed workspaces persist nothing to hydrate (see doPersistWorkspace); the
             // empty archive is an intentional no-op marker, not an error, and must not overwrite

@@ -176,7 +176,10 @@ class E2bVolumeMountLiveTest {
 
             // TAR persist must be a no-op (empty stream) for a volume-backed workspace.
             try (InputStream archive = sandbox.persistWorkspace()) {
-                assertEquals(0, archive.readAllBytes().length, "persist should be a no-op");
+                assertEquals(
+                        0,
+                        io.agentscope.core.compat.Java8Platform.readAllBytes(archive).length,
+                        "persist should be a no-op");
             }
 
             // Marker file lives on the volume.

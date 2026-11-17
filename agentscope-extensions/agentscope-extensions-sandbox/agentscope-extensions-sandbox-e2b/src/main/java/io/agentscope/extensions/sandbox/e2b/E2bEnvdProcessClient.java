@@ -92,7 +92,7 @@ final class E2bEnvdProcessClient {
             }
             com.google.protobuf.DescriptorProtos.FileDescriptorProto fdp =
                     com.google.protobuf.DescriptorProtos.FileDescriptorProto.parseFrom(
-                            in.readAllBytes());
+                            io.agentscope.core.compat.Java8Platform.readAllBytes(in));
             fileDescriptor =
                     com.google.protobuf.Descriptors.FileDescriptor.buildFrom(
                             fdp, new com.google.protobuf.Descriptors.FileDescriptor[0]);
@@ -466,7 +466,7 @@ final class E2bEnvdProcessClient {
             if (flags == -1) {
                 break;
             }
-            byte[] lenB = in.readNBytes(4);
+            byte[] lenB = io.agentscope.core.compat.Java8Platform.readNBytes(in, 4);
             if (lenB.length < 4) {
                 break;
             }
@@ -480,7 +480,7 @@ final class E2bEnvdProcessClient {
             if (len < 0 || len > frameLimit) {
                 throw new IOException("Invalid connect frame length: " + len);
             }
-            byte[] data = in.readNBytes(len);
+            byte[] data = io.agentscope.core.compat.Java8Platform.readNBytes(in, len);
             if (data.length < len) {
                 break;
             }
@@ -591,7 +591,7 @@ final class E2bEnvdProcessClient {
         if (buffered.length > 0 && buffered[buffered.length - 1] != '\n') {
             stderr.write('\n');
         }
-        stderr.writeBytes(text);
+        stderr.write(text, 0, text.length);
     }
 
     private void appendDataStream(DynamicMessage dataEv, String field, ByteArrayOutputStream out)

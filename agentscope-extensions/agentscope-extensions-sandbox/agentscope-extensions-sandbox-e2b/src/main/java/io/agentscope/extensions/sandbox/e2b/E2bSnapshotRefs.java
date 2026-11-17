@@ -75,7 +75,9 @@ public final class E2bSnapshotRefs {
      * Reads and validates a native snapshot reference.
      */
     static SnapshotIdRef peekSnapshotId(InputStream input) throws IOException {
-        byte[] raw = input.readNBytes(MAX_NATIVE_SNAPSHOT_BYTES);
+        byte[] raw =
+                io.agentscope.core.compat.Java8Platform.readNBytes(
+                        input, MAX_NATIVE_SNAPSHOT_BYTES);
         String snapshotId = decodeSnapshotIdIfPresent(raw);
         if (snapshotId == null || snapshotId.isBlank()) {
             throw new IOException("E2B native snapshot reference is missing a snapshot id");

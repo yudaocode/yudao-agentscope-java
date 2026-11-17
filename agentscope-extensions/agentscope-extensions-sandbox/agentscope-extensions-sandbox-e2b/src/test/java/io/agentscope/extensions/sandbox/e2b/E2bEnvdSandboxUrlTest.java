@@ -144,9 +144,9 @@ class E2bEnvdSandboxUrlTest {
     private static byte[] connectFrames(String... jsons) {
         java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
         for (String json : jsons) {
-            out.writeBytes(
-                    E2bEnvdProcessClient.encodeUnaryEnvelope(
-                            json.getBytes(StandardCharsets.UTF_8)));
+            byte[] frame =
+                    E2bEnvdProcessClient.encodeUnaryEnvelope(json.getBytes(StandardCharsets.UTF_8));
+            out.write(frame, 0, frame.length);
         }
         return out.toByteArray();
     }

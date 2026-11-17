@@ -351,7 +351,7 @@ class E2bVolumeMountTest {
         E2bSandbox sandbox = new E2bSandbox(state, options());
 
         try (java.io.InputStream archive = sandbox.persistWorkspace()) {
-            assertEquals(0, archive.readAllBytes().length);
+            assertEquals(0, io.agentscope.core.compat.Java8Platform.readAllBytes(archive).length);
         }
         sandbox.hydrateWorkspace(java.io.InputStream.nullInputStream());
         invokeDoDestroyWorkspace(sandbox);
