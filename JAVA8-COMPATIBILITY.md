@@ -187,3 +187,12 @@ Java8渠道父POM管理Spring Framework5.3.39；Webhook Controller与WebFlux依�
 钉钉Stream复用已验证的AgentScope WebSocketTransport（Java8分支使用OkHttp后端），保持注册HTTP、ticket、回调/ACK与重连逻辑；stop会释放连接、握手、拥有的HTTP客户端与调度器，停止后不能重启同一实例。新增2项实际协议/生命周期回归；微信URLEncoder使用Java8的UTF-8名称重载。common仅依赖小型兼容库和可选Jackson注解；微信测试日志实现匹配SLF4J1.7。
 
 原有GitHub/GitLab无测试，现各新增4项认证/分派/去重用例；两者不访问远端。七库计数common25、钉钉48、飞书12、GitHub4、GitLab4、企微16、微信71，其中微信实服1项条件跳过。运行闭包389jar/158554基础类均<=52，API111项与前批一致。支持范围现69模块/54运行库，验证仍为完整52检查点加后续逐批组件回归，不宣称一次完整69模块全跑。
+
+## Complete69-module regression checkpoint
+
+The entire current default69-module reactor passed a serial clean install on native Java1.8.0_472:10358 XML cases, zero failures/errors,71 conditional skips.
+Every executed report records the actual Java8 VM; the fully disabled Docker sandbox class has no VM property and remains a skipped gap, not a successful runtime execution.
+This gate includes the previously separate SDK/starter/XXL/Nacos/Judge/Channels batches, without simply summing old component runs.
+Runtime dependency classpaths were regenerated after clean:69 files,389jars,158554 effective base classes, none above major52.
+The independent native8 static member audit retains111 reviewed optional third-party references; it is not silently converted into a zero-finding claim.
+Live platform credentials, the excluded27 library/extension/application directories and all sandbox/Kubernetes backends are not covered by this gate.
