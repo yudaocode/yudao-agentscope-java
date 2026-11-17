@@ -30,6 +30,6 @@
 
     <modules>
         <module>agentscope-extensions-agui</module>
-        </modules>
+        <module>agentscope-extensions-chat-completions-web</module></modules>
 
 </project>

@@ -6,7 +6,7 @@
 
 ## 支持范围
 
-当前默认构建包含 47 个 Maven 模块、35 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
+当前默认构建包含 52 个 Maven 模块、40 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
 
 | artifactId | 用途 |
 | --- | --- |
@@ -104,7 +104,7 @@ agentscope:
 
 ## 当前验证边界
 
-47 模块在真实 JDK 8 上执行完整默认 clean install：9180 项（按 XML 汇总，避免嵌套测试统计重复），零失败/错误、67 次条件跳过。包含日期解析与 Bouncy Castle Java8 链接回归。Harness 与 AG-UI 在本地测试；第三方模型响应使用本地模拟，真实付费模型、全部 Kubernetes/远程沙箱后端未验收。默认运行依赖排除了 MongoDB 的 Java17 record codec，但静态 API 审计仍能发现第三方可选现代实现；字节码扫描通过不等于每条可选路径兼容。
+52 模块在真实 JDK 8 上执行完整默认 clean install：9820 项（按 XML 汇总，避免嵌套测试统计重复），零失败/错误、69 次条件跳过。包含日期解析与 Bouncy Castle Java8 链接回归。Harness 与 AG-UI 在本地测试；第三方模型响应使用本地模拟，真实付费模型、全部 Kubernetes/远程沙箱后端未验收。默认运行依赖排除了 MongoDB 的 Java17 record codec，但静态 API 审计仍能发现第三方可选现代实现；字节码扫描通过不等于每条可选路径兼容。
 
 ## Memory、RAG 与调度扩展
 
@@ -119,3 +119,24 @@ Java8源码构建采用串行Maven（默认或 `-T1`），避免Jabel并发初�
 BOM现管理 `agentscope-extensions-oss`、`agentscope-extensions-cos`、`agentscope-extensions-skill-git-repository`、`agentscope-extensions-skill-mysql-repository`、`agentscope-extensions-skill-postgresql-repository`。按需添加对应artifactId，版本沿用本分支；对象存储扩展配合core/Harness，技能仓库配合core。服务端地址、凭据和数据库连接由应用提供，当前验证使用本地Git仓库、模拟对象存储客户端与JDBC测试。
 
 Git扩展使用JGit `5.13.5.202508271544-r`，这是已核验的Java8维护路线；保持源码基线OSS3.18.5、COS5.6.245、MySQL9.6.0、PostgreSQL42.7.11。JGit7.x需要现代JDK，Java8分支保留现有技能仓库API并适配进度回调。参见[Eclipse5.13.5说明](https://projects.eclipse.org/projects/technology.jgit/releases/5.13.5)。
+
+## OpenAI Responses 与 Web starter
+
+新增可选模块按需引用 `agentscope-openai-official-spring-boot-starter`、`agentscope-agui-spring-boot-starter`、`agentscope-chat-completions-web-starter`，坐标 groupId 与版本由上述 BOM 管理。OpenAI 官方 SDK 保留 4.99.0，配置 `agentscope.model.provider=openai-official`、`agentscope.openai-official.api-key` 和 `agentscope.openai-official.model-name`。AG-UI starter 需提供 `AguiAgentRegistry`，支持 MVC/WebFlux；Chat Completions starter 需提供 prototype 作用域的 `ReActAgent`，默认路径 `/v1/chat/completions`，可用 `agentscope.chat-completions.enabled=false` 关闭。详细配置见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
+
+只使用 Java API 可按需引入 `agentscope-extensions-model-openai-official` 或 `agentscope-extensions-chat-completions-web`，无需 Web starter。
+
+```yaml
+agentscope:
+  agent:
+    enabled: true
+  model:
+    provider: openai-official
+  openai-official:
+    api-key: ${OPENAI_API_KEY}
+    model-name: gpt-4o
+```
+
+AG-UI 注册表类型为 `io.agentscope.core.agui.registry.AguiAgentRegistry`，具体包名与注册方式见该模块 README 和 starter 测试；引入注册表后自动匹配 MVC 或 WebFlux 栈，不应同时引入两套 Web 栈。Chat Completions Web starter 需要应用提供请求隔离的 prototype Agent，而非共享单例 Agent。
+
+本批五个模块原有 640 项测试纳入上述完整构建。另新增 OpenAI 4.99.0 实际客户端的本地 HTTP 与 SSE 测试 2 项，在 JDK8 上通过，合计默认报告 9822 项、零失败/错误、69 条条件跳过；两条环境变量回退构建测试另以临时虚拟密钥运行通过，不发出远端请求。真实付费 OpenAI 服务未验收。运行依赖扫描 351 个 jar、144254 个基础类，均不高于 Java8 字节码；第三方可选路径的 API 限制仍按上文边界处理。

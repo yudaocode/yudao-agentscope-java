@@ -35,10 +35,7 @@ import org.springframework.context.annotation.Bean;
 public class OpenAIOfficialAutoConfiguration {
 
     @Bean
-    @ConditionalOnProperty(
-            prefix = "agentscope.model",
-            name = "provider",
-            havingValue = "openai-official")
+    @org.springframework.context.annotation.Conditional(OpenAIOfficialProviderCondition.class)
     @ConditionalOnProperty(
             prefix = "agentscope.openai-official",
             name = "enabled",
