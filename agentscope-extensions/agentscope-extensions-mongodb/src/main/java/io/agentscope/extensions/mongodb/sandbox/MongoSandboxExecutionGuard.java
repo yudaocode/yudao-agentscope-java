@@ -342,7 +342,8 @@ public final class MongoSandboxExecutionGuard implements SandboxExecutionGuard, 
         private Duration lockTimeout = Duration.ofMinutes(30);
         private Duration leaseTtl = DEFAULT_LEASE_TTL;
         private Duration retryInterval = DEFAULT_RETRY_INTERVAL;
-        private String owner = "agentscope:" + ProcessHandle.current().pid();
+        private String owner =
+                "agentscope:" + java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
 
         Builder(MongoClient mongoClient) {
             this.mongoClient = Objects.requireNonNull(mongoClient, "mongoClient");

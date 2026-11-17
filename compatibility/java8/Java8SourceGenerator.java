@@ -337,6 +337,27 @@ public final class Java8SourceGenerator {
                         .setAnnotations(componentAnnotations(component, ElementType.METHOD))
                         .setBody(StaticJavaParser.parseBlock("{ return this." + name + "; }"));
             }
+            // Jackson's native record support serializes through component accessors,
+            // including custom/overridden accessors. Keep that contract after lowering.
+            if (record.getAnnotationByName("JsonAutoDetect").isEmpty()) {
+                var accessor =
+                        type.getMethodsByName(name).stream()
+                                .filter(method -> method.getParameters().isEmpty())
+                                .findFirst()
+                                .orElseThrow();
+                if (accessor.getAnnotationByName("JsonProperty").isEmpty()
+                        && accessor.getAnnotationByName("JsonIgnore").isEmpty()
+                        && component.getAnnotationByName("JsonIgnore").isEmpty()) {
+                    var property = component.getAnnotationByName("JsonProperty");
+                    accessor.addAnnotation(
+                            property.isPresent()
+                                    ? property.get().clone()
+                                    : StaticJavaParser.parseAnnotation(
+                                            "@com.fasterxml.jackson.annotation.JsonProperty(\""
+                                                    + name
+                                                    + "\")"));
+                }
+            }
         }
         ConstructorDeclaration canonical =
                 type.getConstructors().stream()
@@ -907,6 +928,45 @@ public final class Java8SourceGenerator {
                             && name.equals("failedFuture")
                     || (scope.equals("Predicate") || scope.equals("java.util.function.Predicate"))
                             && name.equals("not")) {
+                call.setScope(
+                        StaticJavaParser.parseExpression(
+                                "io.agentscope.core.compat.Java8Platform"));
+            } else if (name.equals("toSeconds")
+                    && call.getArguments().isEmpty()
+                    && call.getScope().isPresent()) {
+                try {
+                    if (call.getScope()
+                            .get()
+                            .calculateResolvedType()
+                            .describe()
+                            .equals("java.time.Duration")) {
+                        call.setName("getSeconds");
+                    }
+                } catch (RuntimeException unavailable) {
+                }
+            } else if (name.equals("transferTo")
+                    && call.getArguments().size() == 1
+                    && call.getScope().isPresent()) {
+                try {
+                    String type = call.getScope().get().calculateResolvedType().describe();
+                    if (type.equals("java.io.InputStream") || type.endsWith("InputStream")) {
+                        call.getArguments().addFirst(call.getScope().get().clone());
+                        call.setScope(
+                                StaticJavaParser.parseExpression(
+                                        "io.agentscope.core.compat.Java8Platform"));
+                    }
+                } catch (RuntimeException unavailable) {
+                }
+            } else if ((scope.equals("Thread") || scope.equals("java.lang.Thread"))
+                    && name.equals("onSpinWait")) {
+                call.setName("yield");
+            } else if ((scope.equals("InputStream") || scope.equals("java.io.InputStream"))
+                    && name.equals("nullInputStream")) {
+                call.setScope(
+                        StaticJavaParser.parseExpression(
+                                "io.agentscope.core.compat.Java8Platform"));
+            } else if ((scope.equals("OutputStream") || scope.equals("java.io.OutputStream"))
+                    && name.equals("nullOutputStream")) {
                 call.setScope(
                         StaticJavaParser.parseExpression(
                                 "io.agentscope.core.compat.Java8Platform"));

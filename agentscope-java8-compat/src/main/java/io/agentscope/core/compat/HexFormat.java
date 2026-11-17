@@ -32,4 +32,11 @@ public final class HexFormat {
     public String formatHex(byte[] bytes) {
         return Java8Platform.hexString(bytes);
     }
+
+    public String formatHex(byte[] bytes, int fromIndex, int toIndex) {
+        if (fromIndex < 0 || toIndex > bytes.length || fromIndex > toIndex) {
+            throw new IndexOutOfBoundsException("Invalid hexadecimal byte range");
+        }
+        return formatHex(java.util.Arrays.copyOfRange(bytes, fromIndex, toIndex));
+    }
 }

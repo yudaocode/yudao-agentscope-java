@@ -102,6 +102,11 @@
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
         </dependency>
+        <!-- The upstream ITU duration parser calls a newer JDK method despite Java 8 bytecode. -->
+        <dependency>
+            <groupId>cn.iocoder.spring-ai</groupId>
+            <artifactId>spring-ai-itu-compat</artifactId>
+        </dependency>
         <!-- JSON Schema Validator for tool input validation -->
         <dependency>
             <groupId>com.networknt</groupId>

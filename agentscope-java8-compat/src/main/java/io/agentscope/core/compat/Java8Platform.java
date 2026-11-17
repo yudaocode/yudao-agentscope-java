@@ -138,6 +138,87 @@ public final class Java8Platform {
         return output.toByteArray();
     }
 
+    public static long transferTo(java.io.InputStream input, java.io.OutputStream output)
+            throws IOException {
+        Objects.requireNonNull(output);
+        byte[] buffer = new byte[8192];
+        long transferred = 0;
+        int count;
+        while ((count = input.read(buffer)) != -1) {
+            output.write(buffer, 0, count);
+            transferred += count;
+        }
+        return transferred;
+    }
+
+    public static java.io.InputStream nullInputStream() {
+        return new java.io.InputStream() {
+            private boolean closed;
+
+            @Override
+            public int read() throws IOException {
+                if (closed) {
+                    throw new IOException("Stream closed");
+                }
+                return -1;
+            }
+
+            @Override
+            public int read(byte[] bytes, int offset, int length) throws IOException {
+                Objects.requireNonNull(bytes);
+                if (offset < 0 || length < 0 || offset > bytes.length - length) {
+                    throw new IndexOutOfBoundsException();
+                }
+                read();
+                return length == 0 ? 0 : -1;
+            }
+
+            @Override
+            public long skip(long count) throws IOException {
+                read();
+                return 0;
+            }
+
+            @Override
+            public int available() throws IOException {
+                read();
+                return 0;
+            }
+
+            @Override
+            public void close() {
+                closed = true;
+            }
+        };
+    }
+
+    public static java.io.OutputStream nullOutputStream() {
+        return new java.io.OutputStream() {
+            private boolean closed;
+
+            @Override
+            public void write(int value) throws IOException {
+                if (closed) {
+                    throw new IOException("Stream closed");
+                }
+            }
+
+            @Override
+            public void write(byte[] bytes, int offset, int length) throws IOException {
+                Objects.requireNonNull(bytes);
+                if (offset < 0 || length < 0 || offset > bytes.length - length) {
+                    throw new IndexOutOfBoundsException();
+                }
+                write(0);
+            }
+
+            @Override
+            public void close() {
+                closed = true;
+            }
+        };
+    }
+
     public static boolean isBlank(String value) {
         return value.codePoints().allMatch(Character::isWhitespace);
     }

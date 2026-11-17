@@ -8,6 +8,11 @@
 
 set -e
 
+# The compatibility branch publishes only its validated default reactor.
+if grep -q '<java.version>8</java.version>' pom.xml; then
+    exec python3 .github/scripts/check-java8-bom-sync.py
+fi
+
 ALL_POM="agentscope-distribution/agentscope-all/pom.xml"
 BOM_POM="agentscope-distribution/agentscope-bom/pom.xml"
 

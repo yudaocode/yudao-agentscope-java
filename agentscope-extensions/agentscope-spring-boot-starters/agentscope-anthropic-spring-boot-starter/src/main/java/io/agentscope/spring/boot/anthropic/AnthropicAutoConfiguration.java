@@ -25,6 +25,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 
 /**
  * Spring Boot auto-configuration for the Anthropic model extension.
@@ -35,10 +36,7 @@ import org.springframework.context.annotation.Bean;
 public class AnthropicAutoConfiguration {
 
     @Bean
-    @ConditionalOnProperty(
-            prefix = "agentscope.model",
-            name = "provider",
-            havingValue = "anthropic")
+    @Conditional(AnthropicProviderCondition.class)
     @ConditionalOnProperty(
             prefix = "agentscope.anthropic",
             name = "enabled",

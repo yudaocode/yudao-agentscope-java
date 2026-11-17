@@ -25,6 +25,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 
 /**
  * Spring Boot auto-configuration for the Ollama model extension.
@@ -35,7 +36,7 @@ import org.springframework.context.annotation.Bean;
 public class OllamaAutoConfiguration {
 
     @Bean
-    @ConditionalOnProperty(prefix = "agentscope.model", name = "provider", havingValue = "ollama")
+    @Conditional(OllamaProviderCondition.class)
     @ConditionalOnProperty(
             prefix = "agentscope.ollama",
             name = "enabled",

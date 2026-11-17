@@ -36,6 +36,12 @@ import org.junit.jupiter.api.Test;
 
 class JsonSchemaUtilsTest {
 
+    @Test
+    void durationParserLinksAgainstTheJava8CompatibleDependency() {
+        // The upstream ITU binary calls Math.multiplyExact(long, int), absent on Java 8.
+        assertEquals(86400L, com.ethlo.time.ITU.parseDuration("P1D").getSeconds());
+    }
+
     private static final int CONCURRENT_THREAD_COUNT = 12;
 
     private static final int CONCURRENT_CALL_COUNT = 240;

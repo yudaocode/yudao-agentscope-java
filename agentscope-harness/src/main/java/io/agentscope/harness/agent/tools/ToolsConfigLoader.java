@@ -95,7 +95,7 @@ public final class ToolsConfigLoader {
      */
     static String substituteEnv(String raw) {
         Matcher m = ENV_VAR.matcher(raw);
-        StringBuilder out = new StringBuilder(raw.length());
+        StringBuffer out = new StringBuffer(raw.length());
         Set<String> warned = new HashSet<>();
         while (m.find()) {
             String var = m.group(1);

@@ -24,7 +24,7 @@
     <name>AgentScope Java - Parent</name>
 
     <properties>
-        <revision>2.0.0-SNAPSHOT</revision>
+        <revision>2.1.0-jdk8-SNAPSHOT</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>8</java.version>
@@ -60,7 +60,7 @@
         <module>agentscope-extensions</module>
         <module>agentscope-dependencies-bom</module>
         <module>agentscope-distribution</module>
-    <module>agentscope-runtime-sandbox-core</module></modules>
+    <module>agentscope-runtime-sandbox-core</module><module>agentscope-harness</module></modules>
 
     <description>AgentScope Java: Agent-Oriented Programming for Building LLM Applications</description>
     <url>https://github.com/agentscope-ai/agentscope-java</url>

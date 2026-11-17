@@ -1,12 +1,12 @@
 # Spring Boot 2.7 / Java 8 使用说明
 
 本分支基于上游提交 `30dc84b59e646f443dcf1870d66b3225e6210582` 进行源码兼容维护。
-版本号 `2.0.0-SNAPSHOT` 表示本仓库的 Boot 2 版本线，不对应上游功能版本号。
+版本号 `2.1.0-jdk8-SNAPSHOT` 保留上游 2.1.0 开发基线，以 jdk8 标识 Boot 2 兼容路线；正式版本追加日期，未发布上游基线增加 preview。
 这些坐标尚未发布 Maven Central 或远端 SNAPSHOT 仓库，需要先安装到本地 Maven 仓库。
 
 ## 支持范围
 
-当前默认构建包含 13 个 Maven 模块，其中可供应用使用的库为：
+当前默认构建包含 29 个 Maven 模块、21 个运行库，其中可供应用使用的库为：
 
 | artifactId | 用途 |
 | --- | --- |
@@ -17,7 +17,9 @@
 | `agentscope-runtime-sandbox-core` | 独立 SandboxService / Docker 沙箱 SDK |
 
 `agentscope-java8-compat` 自动提供 core 与 runtime-sandbox 共用的基础辅助类；无需在应用中单独配置。其余模块是父 POM、聚合模块和 BOM。
-Harness、Durable、其他模型与存储等扩展，以及 `agentscope-all` 尚未列入本分支默认构建和 BOM；源码保留，后续逐项适配。
+新增 OpenAI、Ollama、Anthropic、Gemini 四模型与对应 Boot2 starter。Anthropic SDK 需要 Kotlin1.9.24；继承 Boot2 parent 时设置 `<kotlin.version>1.9.24</kotlin.version>`，避免父 POM 压回旧 stdlib。
+
+Harness、AG-UI、JDBC、MySQL、PostgreSQL、Redis、MongoDB 已列入默认构建和 BOM；Durable、Channels、RAG、Memory、Scheduler 等其余扩展及 `agentscope-all` 尚未纳入，源码保留。MongoDB 5.3.1 排除仅支持 Java 17 的可选原生 record codec，Java 8 使用 BSON/POJO codec。JSON schema 日期解析使用 Spring AI 的 ITU 兼容实现；可选 Kubernetes 后端尚未验收，其 SnakeYAML Engine 2.7 仍有新版 JDK API 引用，不属于 Java 8 已验证路径。
 独立沙箱模块的构建、配置与生命周期见 [Runtime sandbox 使用说明](agentscope-runtime-sandbox-core/README_zh.md)。
 
 ## 从源码安装
@@ -43,10 +45,11 @@ mvn -Djvm="$JAVA8_HOME/bin/java" clean install
 
 ```xml
 <properties>
-    <yudao-agentscope.version>2.0.0-SNAPSHOT</yudao-agentscope.version>
+    <yudao-agentscope.version>2.1.0-jdk8-SNAPSHOT</yudao-agentscope.version>
     <!-- 继承 spring-boot-starter-parent 2.7 时需要覆盖这两个属性 -->
-    <httpclient5.version>5.6.1</httpclient5.version>
-    <httpcore5.version>5.4</httpcore5.version>
+    <httpclient5.version>5.6.5</httpclient5.version>
+    <httpcore5.version>5.4.4</httpcore5.version>
+    <kotlin.version>1.9.24</kotlin.version>
 </properties>
 <dependencyManagement>
     <dependencies>
@@ -98,3 +101,7 @@ agentscope:
 - 客户端由应用传入时，传输层仅释放自身连接，不关闭应用持有的共享客户端或执行器。
 
 这些差异集中在底层客户端定制入口；消息、模型与 Agent 的 Java 包名继续沿用 `io.agentscope.*`。
+
+## 当前验证边界
+
+29 模块在真实 JDK 8 上执行完整默认 install：8115 项（按 XML 汇总，避免嵌套测试统计重复），零失败/错误、64 次条件跳过。后续日期解析依赖回归单独验证。Harness 与 AG-UI 在本地测试；第三方模型响应使用本地模拟，真实付费模型、全部 Kubernetes/远程沙箱后端未验收。默认运行依赖排除了 MongoDB 的 Java17 record codec，但静态 API 审计仍能发现第三方可选现代实现；字节码扫描通过不等于每条可选路径兼容。

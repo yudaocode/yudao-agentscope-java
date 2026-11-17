@@ -25,6 +25,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 
 /**
  * Spring Boot auto-configuration for the Gemini model extension.
@@ -35,7 +36,7 @@ import org.springframework.context.annotation.Bean;
 public class GeminiAutoConfiguration {
 
     @Bean
-    @ConditionalOnProperty(prefix = "agentscope.model", name = "provider", havingValue = "gemini")
+    @Conditional(GeminiProviderCondition.class)
     @ConditionalOnProperty(
             prefix = "agentscope.gemini",
             name = "enabled",
