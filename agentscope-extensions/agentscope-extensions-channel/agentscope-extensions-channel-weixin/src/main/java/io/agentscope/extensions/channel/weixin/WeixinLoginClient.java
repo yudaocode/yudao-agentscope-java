@@ -82,12 +82,12 @@ public final class WeixinLoginClient {
         String path =
                 "/ilink/bot/get_qrcode_status?qrcode="
                         + java.net.URLEncoder.encode(
-                                session.qrcode(), java.nio.charset.StandardCharsets.UTF_8);
+                                session.qrcode(), java.nio.charset.StandardCharsets.UTF_8.name());
         if (verifyCode != null && !verifyCode.isBlank())
             path +=
                     "&verify_code="
                             + java.net.URLEncoder.encode(
-                                    verifyCode, java.nio.charset.StandardCharsets.UTF_8);
+                                    verifyCode, java.nio.charset.StandardCharsets.UTF_8.name());
         String pollingBaseUrl =
                 validateProviderEndpoint(baseUrl, normalizeBaseUrl(session.pollingBaseUrl()));
         JsonNode n = get(pollingBaseUrl, path);

@@ -6,7 +6,7 @@
 
 ## 支持范围
 
-当前默认构建包含 61 个 Maven 模块、47 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
+当前默认构建包含 69 个 Maven 模块、54 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
 
 | artifactId | 用途 |
 | --- | --- |
@@ -19,7 +19,7 @@
 `agentscope-java8-compat` 自动提供 core 与 runtime-sandbox 共用的基础辅助类；无需在应用中单独配置。其余模块是父 POM、聚合模块和 BOM。
 新增 OpenAI、Ollama、Anthropic、Gemini 四模型与对应 Boot2 starter。Anthropic SDK 需要 Kotlin1.9.24；继承 Boot2 parent 时设置 `<kotlin.version>1.9.24</kotlin.version>`，避免父 POM 压回旧 stdlib。
 
-Harness、AG-UI、JDBC、MySQL、PostgreSQL、Redis、MongoDB 已列入默认构建和 BOM；Durable、Channels、RAG-simple 等其余扩展及 `agentscope-all` 尚未纳入，源码保留。MongoDB 5.3.1 排除仅支持 Java 17 的可选原生 record codec，Java 8 使用 BSON/POJO codec。JSON schema 日期解析使用 Spring AI 的 ITU 兼容实现；可选 Kubernetes 后端尚未验收，其 SnakeYAML Engine 2.7 仍有新版 JDK API 引用，不属于 Java 8 已验证路径。
+Harness、AG-UI、JDBC、MySQL、PostgreSQL、Redis、MongoDB 已列入默认构建和 BOM；Durable、RAG-simple 等其余扩展及 `agentscope-all` 尚未纳入，源码保留。MongoDB 5.3.1 排除仅支持 Java 17 的可选原生 record codec，Java 8 使用 BSON/POJO codec。JSON schema 日期解析使用 Spring AI 的 ITU 兼容实现；可选 Kubernetes 后端尚未验收，其 SnakeYAML Engine 2.7 仍有新版 JDK API 引用，不属于 Java 8 已验证路径。
 独立沙箱模块的构建、配置与生命周期见 [Runtime sandbox 使用说明](agentscope-runtime-sandbox-core/README_zh.md)。
 
 ## 从源码安装
@@ -173,3 +173,17 @@ mvn -pl :agentscope-extensions-jev -Dtest=JevBrowserDriverTest \
 ```
 
 该命令操作测试自己启动的127.0.0.1页面，不依赖用户已登录浏览器配置。新reactor61模块/47运行库；此前完整52模块门禁与后续组件门禁分别保留，不合并宣称全61一次完整重跑。
+
+本批最终运行闭包381jar /158456基础类均<=52；静态API审计111项未增加，仍为已记录的第三方可选现代路径。
+
+## Channels 渠道接入
+
+Channels 扩展现已纳入 Java8 构建：`agentscope-extensions-channel-common` 与 `agentscope-extensions-channel-dingtalk` / `-feishu` / `-github` / `-gitlab` / `-wecom` / `-weixin`。同 groupId、版本由 BOM 管理；应用还需引入 `agentscope-harness`，使用 webhook/WebClient 的场景提供 Boot2 的 WebFlux 运行依赖并注册相应 Controller。通过对应 Channel 的 `fromProperties(channelId, routing, rawProperties)` 构建并交给 Harness Gateway；属性键遵循模块的 `*ChannelProperties`，如 GitHub 的 `token`/`webhookSecret`、GitLab 的 `token`/`webhookToken`。微信接入见[模块说明](agentscope-extensions/agentscope-extensions-channel/agentscope-extensions-channel-weixin/README.md)。
+
+七个库共180项真实JDK8测试，零失败/错误、1项实服条件跳过；包括新增钉钉本地HTTP注册/WebSocket/ACK测试和GitHub/GitLab认证、事件分派、去重测试。未调用真实平台账号、未发送平台消息。
+
+Java8渠道父POM管理Spring Framework5.3.39；Webhook Controller与WebFlux依赖为provided，应用需提供实际Web运行时。保持应用内Spring组件统一，不能混入Spring6/7。通过Gateway初始化Channel后再start，在应用关闭时stop。start可能解析平台机器人身份；真实账号接入由应用自行配置，测试仅使用本地模拟。
+
+钉钉Stream复用已验证的AgentScope WebSocketTransport（Java8分支使用OkHttp后端），保持注册HTTP、ticket、回调/ACK与重连逻辑；stop会释放连接、握手、拥有的HTTP客户端与调度器，停止后不能重启同一实例。新增2项实际协议/生命周期回归；微信URLEncoder使用Java8的UTF-8名称重载。common仅依赖小型兼容库和可选Jackson注解；微信测试日志实现匹配SLF4J1.7。
+
+原有GitHub/GitLab无测试，现各新增4项认证/分派/去重用例；两者不访问远端。七库计数common25、钉钉48、飞书12、GitHub4、GitLab4、企微16、微信71，其中微信实服1项条件跳过。运行闭包389jar/158554基础类均<=52，API111项与前批一致。支持范围现69模块/54运行库，验证仍为完整52检查点加后续逐批组件回归，不宣称一次完整69模块全跑。

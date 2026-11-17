@@ -18,15 +18,14 @@ package io.agentscope.extensions.channel.dingtalk;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.agentscope.core.model.transport.WebSocketTransport;
+import io.agentscope.core.model.transport.websocket.JdkWebSocketTransport;
+import io.agentscope.core.model.transport.websocket.WebSocketConnection;
+import io.agentscope.core.model.transport.websocket.WebSocketRequest;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.WebSocket;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -36,6 +35,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.compat.jdkhttp.HttpClient;
+import org.springframework.ai.compat.jdkhttp.HttpRequest;
+import org.springframework.ai.compat.jdkhttp.HttpResponse;
+import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
 
 /**
  * DingTalk Stream client — opens a long-lived WebSocket to the DingTalk gateway, subscribes to the
@@ -53,7 +57,7 @@ import org.slf4j.LoggerFactory;
  * </ol>
  *
  * <p>This client is intentionally small — no external SDK dependency, no schema validation beyond
- * what's required. Heartbeat / ping is left to the JDK WebSocket implementation.
+ * what's required. Heartbeat / ping is handled by the shared Java8 WebSocket transport.
  */
 public final class DingTalkStreamClient {
 
@@ -73,9 +77,12 @@ public final class DingTalkStreamClient {
             HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).build();
 
     private final AtomicBoolean running = new AtomicBoolean(false);
-    private final AtomicReference<WebSocket> currentSocket = new AtomicReference<>();
+    private final WebSocketTransport webSockets = JdkWebSocketTransport.create();
+    private final AtomicBoolean closed = new AtomicBoolean();
+    private final AtomicReference<WebSocketConnection<String>> currentSocket =
+            new AtomicReference<>();
+    private final AtomicReference<Disposable> streamTask = new AtomicReference<>();
     private final AtomicReference<ScheduledFuture<?>> reconnectTask = new AtomicReference<>();
-    private final StringBuilder partialFrame = new StringBuilder();
 
     private long backoffMs = 1_000L;
 
@@ -86,7 +93,10 @@ public final class DingTalkStreamClient {
     }
 
     /** Starts the stream connection. Safe to call once. */
-    public void start() {
+    public synchronized void start() {
+        if (closed.get()) {
+            throw new IllegalStateException("DingTalk Stream client is closed");
+        }
         if (!running.compareAndSet(false, true)) {
             return;
         }
@@ -94,23 +104,18 @@ public final class DingTalkStreamClient {
     }
 
     /** Stops the stream connection and releases resources. */
-    public void stop() {
-        if (!running.compareAndSet(true, false)) {
+    public synchronized void stop() {
+        if (!closed.compareAndSet(false, true)) {
             return;
         }
+        running.set(false);
         ScheduledFuture<?> rt = reconnectTask.getAndSet(null);
-        if (rt != null) {
-            rt.cancel(false);
-        }
-        WebSocket s = currentSocket.getAndSet(null);
-        if (s != null) {
-            try {
-                s.sendClose(WebSocket.NORMAL_CLOSURE, "shutdown");
-            } catch (Exception ignored) {
-                // best effort
-            }
-            s.abort();
-        }
+        if (rt != null) rt.cancel(false);
+        Disposable task = streamTask.getAndSet(null);
+        if (task != null) task.dispose();
+        currentSocket.set(null);
+        webSockets.shutdown();
+        httpClient.close();
         scheduler.shutdownNow();
     }
 
@@ -137,25 +142,50 @@ public final class DingTalkStreamClient {
                                 + "ticket="
                                 + endpoint.ticket);
         try {
-            httpClient
-                    .newWebSocketBuilder()
-                    .connectTimeout(Duration.ofSeconds(15))
-                    .buildAsync(wsUri, new Listener())
-                    .whenComplete(
-                            (ws, err) -> {
-                                if (err != null) {
-                                    log.warn(
-                                            "DingTalk Stream WebSocket connect failed: {}"
-                                                    + " (reconnect in {}ms)",
-                                            err.getMessage(),
-                                            backoffMs);
-                                    scheduleReconnect();
-                                    return;
-                                }
-                                currentSocket.set(ws);
-                                backoffMs = 1_000L;
-                                log.info("DingTalk Stream connected: {}", wsUri.getHost());
-                            });
+            Disposable task =
+                    webSockets
+                            .connect(
+                                    WebSocketRequest.builder(wsUri.toString())
+                                            .connectTimeout(Duration.ofSeconds(15))
+                                            .build(),
+                                    String.class)
+                            .flatMapMany(
+                                    socket -> {
+                                        if (!running.get())
+                                            return socket.close().thenMany(Flux.<String>empty());
+                                        currentSocket.set(socket);
+                                        backoffMs = 1_000L;
+                                        log.info("DingTalk Stream connected: {}", wsUri.getHost());
+                                        return socket.receive()
+                                                .doFinally(
+                                                        signal -> {
+                                                            currentSocket.compareAndSet(
+                                                                    socket, null);
+                                                            socket.close()
+                                                                    .subscribe(
+                                                                            null,
+                                                                            error ->
+                                                                                    log.debug(
+                                                                                            "DingTalk"
+                                                                                                + " Stream"
+                                                                                                + " close"
+                                                                                                + " failed:"
+                                                                                                + " {}",
+                                                                                            error
+                                                                                                    .getMessage()));
+                                                        });
+                                    })
+                            .subscribe(
+                                    this::handleFrame,
+                                    error -> {
+                                        log.warn(
+                                                "DingTalk Stream connection failed: {}",
+                                                error.getMessage());
+                                        scheduleReconnect();
+                                    },
+                                    this::scheduleReconnect);
+            streamTask.set(task);
+            if (!running.get()) task.dispose();
         } catch (Exception e) {
             log.warn(
                     "DingTalk Stream WebSocket build failed: {} (reconnect in {}ms)",
@@ -165,7 +195,7 @@ public final class DingTalkStreamClient {
         }
     }
 
-    private void scheduleReconnect() {
+    private synchronized void scheduleReconnect() {
         if (!running.get()) {
             return;
         }
@@ -239,7 +269,7 @@ public final class DingTalkStreamClient {
     }
 
     private void ackFrame(JsonNode envelope) {
-        WebSocket socket = currentSocket.get();
+        WebSocketConnection<String> socket = currentSocket.get();
         if (socket == null) {
             return;
         }
@@ -254,50 +284,15 @@ public final class DingTalkStreamClient {
             headers.put("contentType", "application/json");
             ack.put("message", "OK");
             ack.put("data", "{}");
-            socket.sendText(MAPPER.writeValueAsString(ack), true);
+            socket.send(MAPPER.writeValueAsString(ack))
+                    .subscribe(
+                            null,
+                            error ->
+                                    log.warn(
+                                            "DingTalk Stream: failed to send ack: {}",
+                                            error.getMessage()));
         } catch (Exception e) {
             log.warn("DingTalk Stream: failed to send ack: {}", e.getMessage());
-        }
-    }
-
-    private final class Listener implements WebSocket.Listener {
-
-        @Override
-        public void onOpen(WebSocket webSocket) {
-            webSocket.request(1);
-        }
-
-        @Override
-        public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
-            partialFrame.append(data);
-            if (last) {
-                String text = partialFrame.toString();
-                partialFrame.setLength(0);
-                try {
-                    handleFrame(text);
-                } catch (Exception e) {
-                    log.warn("DingTalk Stream: handler error: {}", e.getMessage());
-                }
-            }
-            webSocket.request(1);
-            return null;
-        }
-
-        @Override
-        public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
-            log.info("DingTalk Stream: closed code={}, reason={}", statusCode, reason);
-            currentSocket.compareAndSet(webSocket, null);
-            partialFrame.setLength(0);
-            scheduleReconnect();
-            return null;
-        }
-
-        @Override
-        public void onError(WebSocket webSocket, Throwable error) {
-            log.warn("DingTalk Stream: error: {}", error.getMessage());
-            currentSocket.compareAndSet(webSocket, null);
-            partialFrame.setLength(0);
-            scheduleReconnect();
         }
     }
 
