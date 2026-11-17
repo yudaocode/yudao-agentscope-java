@@ -13,8 +13,7 @@
   ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
--->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+--><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>cn.iocoder.agentscope</groupId>
@@ -105,7 +104,7 @@
         <testcontainers.version>1.21.4</testcontainers.version><bailian.version>2.14.5</bailian.version>
         <quartz.version>2.4.1</quartz.version>
         <bouncycastle.version>1.87</bouncycastle.version>
-        <jgit.version>5.13.5.202508271544-r</jgit.version><openai-java.version>4.99.0</openai-java.version></properties>
+        <jgit.version>5.13.5.202508271544-r</jgit.version><openai-java.version>4.99.0</openai-java.version><xxl-job.version>2.5.0</xxl-job.version></properties>
 
     <dependencyManagement>
         <dependencies>
@@ -342,7 +341,7 @@
                 <version>${quartz.version}</version>
             </dependency>
 
-            <dependency><groupId>org.eclipse.jgit</groupId><artifactId>org.eclipse.jgit</artifactId><version>${jgit.version}</version></dependency><dependency><groupId>com.openai</groupId><artifactId>openai-java</artifactId><version>${openai-java.version}</version></dependency></dependencies>
+            <dependency><groupId>org.eclipse.jgit</groupId><artifactId>org.eclipse.jgit</artifactId><version>${jgit.version}</version></dependency><dependency><groupId>com.openai</groupId><artifactId>openai-java</artifactId><version>${openai-java.version}</version></dependency><dependency><groupId>com.xuxueli</groupId><artifactId>xxl-job-core</artifactId><version>${xxl-job.version}</version></dependency></dependencies>
     </dependencyManagement>
 
     <distributionManagement>

@@ -358,34 +358,14 @@ public class XxlJobAgentScheduler implements AgentScheduler {
     }
 
     /**
-     * Register a JobHandler with XXL-Job executor, compatible with both old and new versions.
-     *
-     * <p>This method provides compatibility across different XXL-Job versions:
-     * <ul>
-     *   <li>XXL-Job 3.3.1+: Uses {@code registryJobHandler} method (new naming)</li>
-     *   <li>XXL-Job older versions: Uses {@code registJobHandler} method (old naming)</li>
-     * </ul>
-     *
-     * <p>The method attempts to use the new method name first (registryJobHandler), and falls
-     * back to the old method name (registJobHandler) if the new one is not available.
+     * Register a JobHandler using the Java8-compatible XXL-Job 2.5 executor API.
      *
      * @param jobName The name of the job handler
      * @param jobHandler The job handler instance to register
      * @throws Exception if registration fails
      */
     private void registerJobHandler(String jobName, IJobHandler jobHandler) throws Exception {
-        try {
-            // Try new method name first (XXL-Job 3.3.1+)
-            XxlJobExecutor.registryJobHandler(jobName, jobHandler);
-            logger.debug(
-                    "Registered JobHandler '{}' using registryJobHandler (XXL-Job 3.3.1+)",
-                    jobName);
-        } catch (Throwable e) {
-            logger.error(
-                    "Registered JobHandler '{}' using registryJobHandler failed. (Need to update"
-                            + " xxl-job core to 3.3.1+)",
-                    jobName);
-            throw e;
-        }
+        XxlJobExecutor.registJobHandler(jobName, jobHandler);
+        logger.debug("Registered JobHandler '{}' using XXL-Job 2.5", jobName);
     }
 }

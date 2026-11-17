@@ -626,13 +626,10 @@ class XxlJobAgentSchedulerTest {
                         .sysPrompt("Test prompt")
                         .build();
 
-        // Mock XxlJobExecutor.registryJobHandler to throw exception
+        // Mock XxlJobExecutor.registJobHandler to throw exception
         try (MockedStatic<XxlJobExecutor> mockedStatic = Mockito.mockStatic(XxlJobExecutor.class)) {
             mockedStatic
-                    .when(
-                            () ->
-                                    XxlJobExecutor.registryJobHandler(
-                                            Mockito.anyString(), Mockito.any()))
+                    .when(() -> XxlJobExecutor.registJobHandler(Mockito.anyString(), Mockito.any()))
                     .thenThrow(new RuntimeException("Failed to register job handler"));
 
             // Should throw RuntimeException when registration fails

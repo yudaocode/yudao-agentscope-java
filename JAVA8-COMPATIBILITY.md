@@ -6,7 +6,7 @@
 
 ## 支持范围
 
-当前默认构建包含 52 个 Maven 模块、40 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
+当前默认构建包含 53 个 Maven 模块、41 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
 
 | artifactId | 用途 |
 | --- | --- |
@@ -19,7 +19,7 @@
 `agentscope-java8-compat` 自动提供 core 与 runtime-sandbox 共用的基础辅助类；无需在应用中单独配置。其余模块是父 POM、聚合模块和 BOM。
 新增 OpenAI、Ollama、Anthropic、Gemini 四模型与对应 Boot2 starter。Anthropic SDK 需要 Kotlin1.9.24；继承 Boot2 parent 时设置 `<kotlin.version>1.9.24</kotlin.version>`，避免父 POM 压回旧 stdlib。
 
-Harness、AG-UI、JDBC、MySQL、PostgreSQL、Redis、MongoDB 已列入默认构建和 BOM；Durable、Channels、RAG-simple、XXL-Job 等其余扩展及 `agentscope-all` 尚未纳入，源码保留。MongoDB 5.3.1 排除仅支持 Java 17 的可选原生 record codec，Java 8 使用 BSON/POJO codec。JSON schema 日期解析使用 Spring AI 的 ITU 兼容实现；可选 Kubernetes 后端尚未验收，其 SnakeYAML Engine 2.7 仍有新版 JDK API 引用，不属于 Java 8 已验证路径。
+Harness、AG-UI、JDBC、MySQL、PostgreSQL、Redis、MongoDB 已列入默认构建和 BOM；Durable、Channels、RAG-simple 等其余扩展及 `agentscope-all` 尚未纳入，源码保留。MongoDB 5.3.1 排除仅支持 Java 17 的可选原生 record codec，Java 8 使用 BSON/POJO codec。JSON schema 日期解析使用 Spring AI 的 ITU 兼容实现；可选 Kubernetes 后端尚未验收，其 SnakeYAML Engine 2.7 仍有新版 JDK API 引用，不属于 Java 8 已验证路径。
 独立沙箱模块的构建、配置与生命周期见 [Runtime sandbox 使用说明](agentscope-runtime-sandbox-core/README_zh.md)。
 
 ## 从源码安装
@@ -140,3 +140,11 @@ agentscope:
 AG-UI 注册表类型为 `io.agentscope.core.agui.registry.AguiAgentRegistry`，具体包名与注册方式见该模块 README 和 starter 测试；引入注册表后自动匹配 MVC 或 WebFlux 栈，不应同时引入两套 Web 栈。Chat Completions Web starter 需要应用提供请求隔离的 prototype Agent，而非共享单例 Agent。
 
 本批五个模块原有 640 项测试纳入上述完整构建。另新增 OpenAI 4.99.0 实际客户端的本地 HTTP 与 SSE 测试 2 项，在 JDK8 上通过，合计默认报告 9822 项、零失败/错误、69 条条件跳过；两条环境变量回退构建测试另以临时虚拟密钥运行通过，不发出远端请求。真实付费 OpenAI 服务未验收。运行依赖扫描 351 个 jar、144254 个基础类，均不高于 Java8 字节码；第三方可选路径的 API 限制仍按上文边界处理。
+
+## XXL-Job 调度
+
+按需引入 `cn.iocoder.agentscope:agentscope-extensions-scheduler-xxl-job`，版本由BOM管理；应用提供已经启动的 `com.xxl.job.core.executor.XxlJobExecutor`，再创建 `io.agentscope.extensions.scheduler.xxljob.XxlJobAgentScheduler`。XXL-Job SDK使用2.5.0，是本次Central元数据中较新的2.x发行版本（Java8字节码52）；官方3.x要求JDK17，3.3.2在真实Java8上已验证会报UnsupportedClassVersionError。参见[官方3.0版本说明](https://github.com/xuxueli/xxl-job/releases/tag/3.0.0)。
+
+继承Boot2 parent且其直接管理XXL-Job时，设置 `<xxl-job.version>2.5.0</xxl-job.version>`；使用BOM导入时核对实际依赖树，避免旧SDK覆盖。保留AgentScope新版调度接口，仅将私有注册适配为2.5的 `registJobHandler`。原有35项测试及新增Groovy闭包运行测试1项全部在JDK8通过；没有启动真实远程调度中心。默认reactor由52扩到53模块，BOM由40扩到41运行库；前述52模块完整测试仍是独立历史检查点，本次单模块回归不混记为全53模块完整重跑。
+
+运行闭包362jar /151009基础类均<=52；静态API审计新增Groovy9/10/16 VM插件引用，实际Java8的Groovy脚本执行已验证。可选现代插件本身不作为Java8路径提供。
