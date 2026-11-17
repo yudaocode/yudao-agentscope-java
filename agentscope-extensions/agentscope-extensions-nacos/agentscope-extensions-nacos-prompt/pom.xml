@@ -32,6 +32,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>cn.iocoder.agentscope</groupId>
+            <artifactId>agentscope-java8-compat</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-client</artifactId>
         </dependency>

@@ -6,7 +6,7 @@
 
 ## 支持范围
 
-当前默认构建包含 53 个 Maven 模块、41 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
+当前默认构建包含 56 个 Maven 模块、43 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
 
 | artifactId | 用途 |
 | --- | --- |
@@ -148,3 +148,11 @@ AG-UI 注册表类型为 `io.agentscope.core.agui.registry.AguiAgentRegistry`，
 继承Boot2 parent且其直接管理XXL-Job时，设置 `<xxl-job.version>2.5.0</xxl-job.version>`；使用BOM导入时核对实际依赖树，避免旧SDK覆盖。保留AgentScope新版调度接口，仅将私有注册适配为2.5的 `registJobHandler`。原有35项测试及新增Groovy闭包运行测试1项全部在JDK8通过；没有启动真实远程调度中心。默认reactor由52扩到53模块，BOM由40扩到41运行库；前述52模块完整测试仍是独立历史检查点，本次单模块回归不混记为全53模块完整重跑。
 
 运行闭包362jar /151009基础类均<=52；静态API审计新增Groovy9/10/16 VM插件引用，实际Java8的Groovy脚本执行已验证。可选现代插件本身不作为Java8路径提供。
+
+## Nacos Prompt 与 Skill
+
+Nacos Prompt/Skill 扩展按需引入 `agentscope-extensions-nacos-prompt`、`agentscope-extensions-nacos-skill`，同 groupId、版本由 BOM 管理。保留上游 Nacos Client `3.3.0`；应用提供 `com.alibaba.nacos.api.ai.AiService`，分别创建 `NacosPromptListener(aiService)`、`NacosSkillRepository(aiService, namespaceId)`。Prompt/Skill 原有 79 项测试在真实 JDK8 上通过；Nacos A2A 与 Nacos starter 尚未纳入本分支，远程 Nacos 服务需单独验收。
+
+类全名为 `io.agentscope.core.nacos.prompt.NacosPromptListener`、`io.agentscope.core.nacos.skill.NacosSkillRepository`。提示词模块只需要小型Java8兼容库，不会因此强制依赖整个Agent核心；Skill仓库依赖Agent核心接口。SDK3.3.0保持不降版，测试包含模板、默认值、版本/label、Skill仓库行为，使用模拟AiService；不证明真实Nacos服务的认证、推送和网络行为。
+
+默认reactor新增Nacos聚合器与两个库，56模块、43运行库；前述完整52检查点之后新增XXL36项和Nacos79项均为独立组件回归。运行闭包374jar/157413基础类<=52，API审计111项与XXL批相同，无新增必需JDK成员缺失。

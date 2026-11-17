@@ -27,7 +27,7 @@ Maven groupId 为 **`cn.iocoder.agentscope`**，artifactId 和 Java 包名沿用
 
 ## 如何使用
 
-当前默认构建包含 53 个 Maven 模块、41 个运行库：核心、Harness、AG-UI、独立 runtime-sandbox、DashScope/OpenAI/OpenAI 官方 Responses/Ollama/Anthropic/Gemini 及其 starter、AG-UI MVC/WebFlux starter、Chat Completions Web SDK 与 starter，以及 JDBC/MySQL/PostgreSQL/Redis/MongoDB 存储，OSS/COS 对象存储、Git/MySQL/PostgreSQL 技能仓库，以及 Mem0/百炼/ReMe Memory、百炼/Dify/Haystack/RAGFlow RAG 与 Quartz/XXL-Job 调度。已纳入真实 JDK 8 回归；其余扩展源码保留，未列入兼容 BOM。详细接入方式见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
+当前默认构建包含 56 个 Maven 模块、43 个运行库：核心、Harness、AG-UI、独立 runtime-sandbox、DashScope/OpenAI/OpenAI 官方 Responses/Ollama/Anthropic/Gemini 及其 starter、AG-UI MVC/WebFlux starter、Chat Completions Web SDK 与 starter，以及 JDBC/MySQL/PostgreSQL/Redis/MongoDB 存储，OSS/COS 对象存储、Git/MySQL/PostgreSQL 技能仓库，以及 Mem0/百炼/ReMe Memory、百炼/Dify/Haystack/RAGFlow RAG 与 Quartz/XXL-Job 调度。已纳入真实 JDK 8 回归；其余扩展源码保留，未列入兼容 BOM。详细接入方式见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
 
 ```xml
 <properties>
@@ -63,6 +63,8 @@ Maven groupId 为 **`cn.iocoder.agentscope`**，artifactId 和 Java 包名沿用
 新增可选模块按需引用 `agentscope-openai-official-spring-boot-starter`、`agentscope-agui-spring-boot-starter`、`agentscope-chat-completions-web-starter`，坐标 groupId 与版本由上述 BOM 管理。OpenAI 官方 SDK 保留 4.99.0，配置 `agentscope.model.provider=openai-official`、`agentscope.openai-official.api-key` 和 `agentscope.openai-official.model-name`。AG-UI starter 需提供 `AguiAgentRegistry`，支持 MVC/WebFlux；Chat Completions starter 需提供 prototype 作用域的 `ReActAgent`，默认路径 `/v1/chat/completions`，可用 `agentscope.chat-completions.enabled=false` 关闭。详细配置见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
 
 XXL-Job 扩展按需引入 `agentscope-extensions-scheduler-xxl-job`，默认使用已核验 Java8 字节码的 XXL-Job `2.5.0`；应用自行启动并传入 `XxlJobExecutor`。继承 Boot2 parent 时，还需设置 `<xxl-job.version>2.5.0</xxl-job.version>` 以统一直接管理的版本。客户端注册/任务执行与 Groovy 运行测试在真实 JDK8 上共 36 项通过；远程调度中心未验收。
+
+Nacos Prompt/Skill 扩展按需引入 `agentscope-extensions-nacos-prompt`、`agentscope-extensions-nacos-skill`，同 groupId、版本由 BOM 管理。保留上游 Nacos Client `3.3.0`；应用提供 `com.alibaba.nacos.api.ai.AiService`，分别创建 `NacosPromptListener(aiService)`、`NacosSkillRepository(aiService, namespaceId)`。Prompt/Skill 原有 79 项测试在真实 JDK8 上通过；Nacos A2A 与 Nacos starter 尚未纳入本分支，远程 Nacos 服务需单独验收。
 
 源码构建使用 JDK 17、Maven 3.9，业务应用继续使用 JDK 8。先安装 `yudao-spring-ai` 的 `main-jdk8` 分支，再在本仓库执行：
 
