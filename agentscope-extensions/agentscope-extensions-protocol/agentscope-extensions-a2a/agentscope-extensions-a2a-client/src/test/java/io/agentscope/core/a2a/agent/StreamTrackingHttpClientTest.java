@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.a2aproject.sdk.client.http.A2AHttpClient;
 import org.a2aproject.sdk.client.http.A2AHttpResponse;
-import org.a2aproject.sdk.client.http.JdkA2AHttpClient;
+import org.a2aproject.sdk.client.http.Java8A2AHttpClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -64,7 +64,8 @@ class StreamTrackingHttpClientTest {
                 });
         server.start();
         try {
-            StreamTrackingHttpClient client = new StreamTrackingHttpClient(new JdkA2AHttpClient());
+            StreamTrackingHttpClient client =
+                    new StreamTrackingHttpClient(new Java8A2AHttpClient());
             AtomicInteger received = new AtomicInteger();
             CountDownLatch firstEvents = new CountDownLatch(3);
             CompletableFuture<Void> stream =

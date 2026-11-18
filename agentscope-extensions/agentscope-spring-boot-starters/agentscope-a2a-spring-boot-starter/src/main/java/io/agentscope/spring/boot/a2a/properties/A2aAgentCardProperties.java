@@ -19,6 +19,7 @@ package io.agentscope.spring.boot.a2a.properties;
 import java.util.List;
 import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.ConstructorBinding;
 
 /**
  * A2a server agent card properties.
@@ -176,6 +177,7 @@ public class A2aAgentCardProperties {
      * @param organization organization name
      * @param url organization website
      */
+    @ConstructorBinding
     public record Provider(String organization, String url) {}
 
     /**
@@ -190,6 +192,7 @@ public class A2aAgentCardProperties {
      * @param outputModes supported output media types, overriding the card defaults
      * @param security security requirements for this skill
      */
+    @ConstructorBinding
     public record Skill(
             String id,
             String name,
@@ -222,6 +225,7 @@ public class A2aAgentCardProperties {
      * @param oauth2MetadataUrl OAuth 2.0 authorization server metadata URL
      * @param openIdConnectUrl OpenID Connect discovery URL
      */
+    @ConstructorBinding
     public record SecurityScheme(
             String type,
             String description,
@@ -242,6 +246,7 @@ public class A2aAgentCardProperties {
      * @param implicit not supported: A2A 1.0 has no implicit flow, setting it fails the startup
      * @param password not supported: A2A 1.0 has no password flow, setting it fails the startup
      */
+    @ConstructorBinding
     public record OAuthFlows(
             OAuthFlow authorizationCode,
             OAuthFlow clientCredentials,
@@ -259,6 +264,7 @@ public class A2aAgentCardProperties {
      * @param pkceRequired whether the authorization code flow requires PKCE
      * @param scopes available scopes and their descriptions
      */
+    @ConstructorBinding
     public record OAuthFlow(
             String authorizationUrl,
             String tokenUrl,
@@ -273,5 +279,6 @@ public class A2aAgentCardProperties {
      * @param transport transport protocol, such as {@code JSONRPC}
      * @param url endpoint URL
      */
+    @ConstructorBinding
     public record AgentInterface(String transport, String url) {}
 }

@@ -70,7 +70,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import reactor.adapter.JdkFlowAdapter;
+import org.springframework.ai.compat.jdkhttp.FlowAdapters;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -134,7 +134,7 @@ class AgentScopeAgentExecutorInputRequiredTest {
         String taskId = stream(firstMessage(), TaskState.TASK_STATE_INPUT_REQUIRED).taskId();
 
         Object first =
-                JdkFlowAdapter.flowPublisherToFlux(
+                FlowAdapters.flowPublisherToFlux(
                                 handler.onMessageSendStream(
                                         new MessageSendParams(
                                                 followUp(taskId, Boolean.TRUE), null, null),
@@ -361,7 +361,7 @@ class AgentScopeAgentExecutorInputRequiredTest {
      */
     private TaskStatusUpdateEvent stream(Message message, TaskState expected) {
         TaskStatusUpdateEvent update =
-                JdkFlowAdapter.flowPublisherToFlux(
+                FlowAdapters.flowPublisherToFlux(
                                 handler.onMessageSendStream(
                                         new MessageSendParams(message, null, null),
                                         callContext(true)))

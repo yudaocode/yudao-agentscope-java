@@ -45,12 +45,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.a2aproject.sdk</groupId>
-            <artifactId>a2a-java-sdk-server-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.a2aproject.sdk</groupId>
-            <artifactId>a2a-java-sdk-transport-jsonrpc</artifactId>
+            <groupId>cn.iocoder.agentscope</groupId>
+            <artifactId>agentscope-a2a-sdk-java8</artifactId>
         </dependency>
         <dependency>
             <groupId>io.projectreactor</groupId>

@@ -59,6 +59,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.env.YamlPropertySourceLoader;
 import org.springframework.boot.test.context.assertj.AssertableWebApplicationContext;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
+import org.springframework.core.NestedExceptionUtils;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 
@@ -449,9 +450,9 @@ class AgentscopeA2aAutoConfigurationTest {
                 .withPropertyValues("agentscope.a2a.server.card.security-schemes.basic.type=basic")
                 .run(
                         context ->
-                                assertThat(context)
-                                        .getFailure()
-                                        .rootCause()
+                                assertThat(
+                                                NestedExceptionUtils.getMostSpecificCause(
+                                                        context.getStartupFailure()))
                                         .hasMessageContaining(
                                                 "Unsupported type 'basic' of security scheme"
                                                         + " 'basic'"));
@@ -538,9 +539,9 @@ class AgentscopeA2aAutoConfigurationTest {
                             "agentscope.a2a.server.card.security-schemes.key.in=" + location)
                     .run(
                             context ->
-                                    assertThat(context)
-                                            .getFailure()
-                                            .rootCause()
+                                    assertThat(
+                                                    NestedExceptionUtils.getMostSpecificCause(
+                                                            context.getStartupFailure()))
                                             .hasMessageContaining(
                                                     "Unsupported location '"
                                                             + location
@@ -560,9 +561,9 @@ class AgentscopeA2aAutoConfigurationTest {
                                     + ".token-url=https://auth/token")
                     .run(
                             context ->
-                                    assertThat(context)
-                                            .getFailure()
-                                            .rootCause()
+                                    assertThat(
+                                                    NestedExceptionUtils.getMostSpecificCause(
+                                                            context.getStartupFailure()))
                                             .hasMessageContaining(
                                                     "OAuth "
                                                             + flow

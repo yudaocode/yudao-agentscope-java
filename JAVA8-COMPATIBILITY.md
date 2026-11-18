@@ -6,7 +6,7 @@
 
 ## 支持范围
 
-当前默认构建包含 93 个 Maven 模块、75 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
+当前默认构建包含 102 个 Maven 模块、83 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
 
 | artifactId | 用途 |
 | --- | --- |
@@ -16,11 +16,14 @@
 | `agentscope-extensions-model-dashscope` | DashScope 模型实现 |
 | `agentscope-dashscope-spring-boot-starter` | DashScope 模型自动配置 |
 | `agentscope-runtime-sandbox-core` | 独立 SandboxService / Docker 沙箱 SDK |
+| `agentscope-a2a-spring-boot-starter` | A2A AgentCard、JSON-RPC 和 SSE |
+| `agentscope-nacos-spring-boot-starter` | Nacos 注册发现及 Prompt 自动配置 |
+| `agentscope` | 聚合 Java API，包含 A2A 和 Nacos 扩展 |
 
 `agentscope-java8-compat` 自动提供 core 与 runtime-sandbox 共用的基础辅助类；无需在应用中单独配置。其余模块是父 POM、聚合模块和 BOM。
 新增 OpenAI、Ollama、Anthropic、Gemini 四模型与对应 Boot2 starter。Anthropic SDK 需要 Kotlin1.9.24；继承 Boot2 parent 时设置 `<kotlin.version>1.9.24</kotlin.version>`，避免父 POM 压回旧 stdlib。
 
-Harness、AG-UI、JDBC、MySQL、PostgreSQL、Redis、MongoDB 已列入默认构建和 BOM；其余尚未纳入的扩展与 `agentscope-all` 源码保留。MongoDB 5.3.1 排除仅支持 Java 17 的可选原生 record codec，Java 8 使用 BSON/POJO codec。JSON schema 日期解析使用 Spring AI 的 ITU 兼容实现；Kubernetes 后端已完成 Java8 本地验证。Kubeconfig 解析与实际运行边界见下文。
+Harness、AG-UI、JDBC、MySQL、PostgreSQL、Redis、MongoDB 已列入默认构建和 BOM；兼容 BOM 同时管理 A2A、Nacos 和 `agentscope` 聚合制品。MongoDB 5.3.1 排除仅支持 Java 17 的可选原生 record codec，Java 8 使用 BSON/POJO codec。JSON schema 日期解析使用 Spring AI 的 ITU 兼容实现；Kubernetes 后端已完成 Java8 本地验证。Kubeconfig 解析与实际运行边界见下文。
 独立沙箱模块的构建、配置与生命周期见 [Runtime sandbox 使用说明](agentscope-runtime-sandbox-core/README_zh.md)。
 
 ## 从源码安装
@@ -348,3 +351,39 @@ Java8 分支使用 Tika 2.9.4 与对应的 PDFBox 2.0.37，Elasticsearch Java/RE
 
 [独立 Boot2 消费验证](compatibility-tests/boot2-rag-simple)实际生成 PDF 并使用两种读取器，另经本地 HTTP 服务验证 Elasticsearch 连接和向量请求。
 真实外部向量库和模型端点按应用部署验收。
+
+## A2A、Nacos 与聚合包
+
+导入上面的兼容 BOM 后，按需要添加 `cn.iocoder.agentscope` 下的制品：
+
+| 场景 | artifactId |
+| --- | --- |
+| Java API 客户端 | `agentscope-core`、`agentscope-extensions-a2a-client` |
+| Java API 服务端 | `agentscope-core`、`agentscope-extensions-a2a-client`、`agentscope-extensions-a2a-server` |
+| Boot 2 MVC 自动配置 | `agentscope-core`、`agentscope-a2a-spring-boot-starter`，加 Boot 的 `spring-boot-starter-web` |
+| Boot 2 使用 Nacos 注册或发现 | 在上面的 Boot 2 依赖基础上添加 `agentscope-nacos-spring-boot-starter` |
+| Java API 聚合包 | `agentscope`，代替聚合包已包含的核心和扩展 JAR |
+
+A2A SDK 1.5.1.Final 的 Java 8 制品和 CDI API 回迁件由 Maven 自动解析。移除同一应用中原来的 `org.a2aproject.sdk` 制品，避免出现两份相同类。聚合包包含 A2A Client/Server 与 Nacos 扩展，Spring Boot starter 始终使用上表的独立制品。聚合包适合以 Java API 组装应用，Nacos Client 由聚合包传递引入，其他可选后端按各自接入说明补充外部 SDK。Boot 应用按需选用 starter 和对应模块。
+
+Boot 2 应用提供 `ReActAgent`、`ReActAgent.Builder` 或 `AgentRunner`。AgentCard 通过 `/.well-known/agent-card.json` 获取。Java API 可用 `A2ACardResolver.builder().baseUrl(url).build().getAgentCard()` 完成发现。Boot 2 parent 会管理部分依赖版本，按本文的依赖属性示例保持 HTTP/Reactor 版本，并设置 `gson.version=2.15.0`。
+
+使用 Nacos 3.3.0 时，可在同一份应用配置中添加：
+
+```yaml
+agentscope:
+  nacos:
+    server-addr: ${NACOS_SERVER_ADDR}
+    namespace: ${NACOS_NAMESPACE:public}
+    username: ${NACOS_USERNAME}
+    password: ${NACOS_PASSWORD}
+  a2a:
+    nacos:
+      enabled: true
+      registry:
+        enabled: true
+      discovery:
+        enabled: true
+```
+
+默认 JDK8 HTTP provider 支持 AgentCard、JSON-RPC 和 SSE。显式启用的 HTTP 跳转仅在同源内处理，默认 SSE 请求禁用跳转。A2A Spring Boot 路线为 JSON-RPC，保持 Java 8 应用可直接运行。

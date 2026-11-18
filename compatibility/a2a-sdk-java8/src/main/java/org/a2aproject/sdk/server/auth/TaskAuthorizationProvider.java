@@ -1,0 +1,226 @@
+package org.a2aproject.sdk.server.auth;
+
+import java.util.Optional;
+
+import org.a2aproject.sdk.server.ServerCallContext;
+import org.a2aproject.sdk.spec.A2AError;
+import org.jspecify.annotations.Nullable;
+
+/**
+ * SPI for per-user task authorization.
+ * <p>
+ * Implementers provide a CDI bean ({@code @ApplicationScoped}) implementing this interface
+ * to control which users can read, write, or create tasks. When no implementation is provided,
+ * all operations are <b>denied by default</b> (fail-closed). To allow unauthenticated access
+ * without a provider (e.g., for single-user deployments or testing), set the
+ * {@code a2a.authorization.required} property to {@code false}, or call
+ * {@code DefaultRequestHandler.builder().authorizationRequired(false)} on the builder path.
+ *
+ * <h2>Providing an implementation</h2>
+ * <p>
+ * Create an {@code @ApplicationScoped} CDI bean that implements this interface. The SDK
+ * automatically discovers it and wires it into the request pipeline — no additional
+ * configuration is required.
+ *
+ * <pre>{@code
+ * import java.util.concurrent.ConcurrentHashMap;
+ * import java.util.concurrent.ConcurrentMap;
+ *
+ * import jakarta.enterprise.context.ApplicationScoped;
+ *
+ * import org.a2aproject.sdk.server.ServerCallContext;
+ * import org.a2aproject.sdk.server.auth.TaskAuthorizationProvider;
+ * import org.a2aproject.sdk.server.auth.TaskOperation;
+ *
+ * @ApplicationScoped
+ * public class MyTaskAuthorizationProvider implements TaskAuthorizationProvider {
+ *     private final ConcurrentMap<String, String> ownershipStore = new ConcurrentHashMap<>();
+ *
+ *     @Override
+ *     public boolean checkRead(ServerCallContext context, String taskId, TaskOperation op) {
+ *         return isOwner(context, taskId);
+ *     }
+ *
+ *     private boolean isOwner(ServerCallContext context, String taskId) {
+ *         String owner = ownershipStore.get(taskId);
+ *         return owner != null
+ *                 && context.getUser() != null
+ *                 && owner.equals(context.getUser().getUsername());
+ *     }
+ *
+ *     @Override
+ *     public boolean checkWrite(ServerCallContext context, String taskId, TaskOperation op) {
+ *         return isOwner(context, taskId);
+ *     }
+ *
+ *     @Override
+ *     public boolean checkCreate(ServerCallContext context, TaskOperation op) {
+ *         return context.getUser() != null && context.getUser().isAuthenticated();
+ *     }
+ *
+ *     @Override
+ *     public boolean isTaskRecorded(String taskId) {
+ *         return ownershipStore.containsKey(taskId);
+ *     }
+ *
+ *     @Override
+ *     public void recordOwnership(ServerCallContext context, String taskId, TaskOperation op) {
+ *         if (context.getUser() != null) {
+ *             ownershipStore.putIfAbsent(taskId, context.getUser().getUsername());
+ *         }
+ *     }
+ * }
+ * }</pre>
+ *
+ * <h2>Behavior</h2>
+ * <p>
+ * When a provider is present, the SDK enforces authorization as follows:
+ * <ul>
+ *   <li>{@code onGetTask}, {@code onSubscribeToTask}, {@code onGetTaskPushNotificationConfig},
+ *       {@code onListTaskPushNotificationConfigs} — call {@link #checkRead}</li>
+ *   <li>{@code onCancelTask}, {@code onCreateTaskPushNotificationConfig},
+ *       {@code onDeleteTaskPushNotificationConfig} — call {@link #checkWrite}</li>
+ *   <li>{@code onMessageSend}, {@code onMessageSendStream} — call {@link #checkWrite} if an
+ *       existing task ID is provided, otherwise call {@link #checkCreate}; after the delegate
+ *       returns, call {@link #recordOwnership} if a new task was created</li>
+ *   <li>{@code onListTasks} — a list-scoped read check is performed before delegation
+ *       (see {@link #checkRead}); after the delegate returns, per-task filtering is also
+ *       pushed down to the {@code TaskStore}, which calls {@link #checkRead} for each task
+ *       to exclude unauthorized entries</li>
+ * </ul>
+ * Denied operations throw {@code TaskNotFoundError} — the caller cannot distinguish
+ * "does not exist" from "not authorized", preventing information leakage.
+ *
+ * <h2>Thread safety</h2>
+ * <p>
+ * Implementations must be thread-safe. Methods will be called concurrently from multiple
+ * requests.
+ *
+ * <h2>Ownership recording</h2>
+ * <p>
+ * {@link #recordOwnership} is only triggered by {@code onMessageSend} and
+ * {@code onMessageSendStream} — the methods that can create tasks.
+ * Other methods ({@code onGetTask}, {@code onCancelTask}, etc.) do not trigger recording.
+ * {@link #checkRead}/{@link #checkWrite} may be called for tasks the provider has no ownership
+ * data for (e.g., legacy tasks created before the provider was enabled). For production
+ * deployments, a <b>fail-closed</b> policy is recommended: deny access when no ownership
+ * data exists. An {@code owner == null → allow} policy is only appropriate for testing or
+ * single-user deployments. If enabling the provider on an existing deployment, consider a
+ * migration step to backfill ownership for pre-existing tasks.
+ *
+ * <h2>Common pitfalls</h2>
+ * <ul>
+ *   <li><b>TOCTOU race on ownership recording:</b> The {@link #isTaskRecorded} →
+ *       {@link #recordOwnership} sequence is not atomic. Two concurrent {@code onMessageSend}
+ *       calls for the same new task can both see {@code isTaskRecorded()} return {@code false}
+ *       and both call {@code recordOwnership}. Implementations must use atomic-insert patterns
+ *       (e.g., {@code ConcurrentMap.putIfAbsent}, {@code INSERT ... ON CONFLICT DO NOTHING})
+ *       so the first writer wins and the second is a harmless no-op.</li>
+ * </ul>
+ *
+ * @see TaskOperation
+ */
+public interface TaskAuthorizationProvider {
+
+    /**
+     * Discover an optional, typed extension implemented by this provider.
+     * Capabilities representing authorization policy must agree with this provider's
+     * complete policy, including restrictions added by subclasses or wrappers.
+     * Unsupported capabilities return empty; lookup failures propagate to the caller.
+     *
+     * @param capabilityType the requested capability interface
+     * @param <T> the capability type
+     * @return the supported capability, or empty when unsupported
+     */
+    default <T> Optional<T> getCapability(Class<T> capabilityType) {
+        return Optional.empty();
+    }
+
+
+    /**
+     * Check whether the current user is allowed to read the given task.
+     *
+     * <p>For {@link TaskOperation#LIST_TASKS}, {@code taskId} is an empty-string sentinel
+     * representing the whole list scope: the decorator calls this method once before
+     * delegation (deny rejects the entire list), and the {@code TaskStore} subsequently
+     * calls it per task during {@code list()} filtering. Providers should treat {@code ""}
+     * with {@code LIST_TASKS} as "may this user list tasks at all" — returning {@code false}
+     * hides all tasks.</p>
+     *
+     * @param context the server call context containing the authenticated user
+     * @param taskId the task being accessed, or {@code ""} for the list scope of {@code LIST_TASKS}
+     * @param operation which RequestHandler method triggered the check
+     * @return {@code true} to allow, {@code false} to deny
+     * @throws A2AError if the authorization check itself fails
+     */
+    boolean checkRead(ServerCallContext context, String taskId, TaskOperation operation) throws A2AError;
+
+    /**
+     * Check whether the current user is allowed to write to the given task.
+     *
+     * @param context the server call context containing the authenticated user
+     * @param taskId the task being accessed
+     * @param operation which RequestHandler method triggered the check
+     * @return {@code true} to allow, {@code false} to deny
+     * @throws A2AError if the authorization check itself fails
+     */
+    boolean checkWrite(ServerCallContext context, String taskId, TaskOperation operation) throws A2AError;
+
+    /**
+     * Check whether the current user is allowed to create a new task.
+     *
+     * @param context the server call context containing the authenticated user
+     * @param operation which RequestHandler method triggered the check
+     * @return {@code true} to allow, {@code false} to deny
+     * @throws A2AError if the authorization check itself fails
+     */
+    boolean checkCreate(ServerCallContext context, TaskOperation operation) throws A2AError;
+
+    /**
+     * Check whether the given task is already known to this provider.
+     * Used to avoid redundant {@link #recordOwnership} calls.
+     *
+     * @param taskId the task to check
+     * @return {@code true} if ownership has already been recorded for this task
+     * @throws A2AError if the check itself fails
+     */
+    boolean isTaskRecorded(String taskId) throws A2AError;
+
+    /**
+     * Record that the current user owns the given task. Called after task creation
+     * via {@code onMessageSend} or {@code onMessageSendStream}.
+     * <p>
+     * <b>Must be idempotent.</b> Concurrent requests for the same unrecorded task may both
+     * call this method before either completes.
+     *
+     * @param context the server call context containing the authenticated user
+     * @param taskId the newly created task
+     * @param operation which RequestHandler method triggered the recording
+     * @throws A2AError if recording fails
+     */
+    void recordOwnership(ServerCallContext context, String taskId, TaskOperation operation) throws A2AError;
+
+    /**
+     * Fail-closed read-access check that handles absent provider and missing call context.
+     * <p>
+     * Returns {@code true} (allow) when no provider is configured.
+     * Returns {@code false} (deny) when a provider is configured but no call context is available.
+     * Otherwise delegates to {@link #checkRead}.
+     *
+     * @param provider the authorization provider, or {@code null} if authorization is disabled
+     * @param context  the server call context, or {@code null} if unavailable
+     * @param taskId   the task being accessed
+     * @param operation which RequestHandler method triggered the check
+     * @return {@code true} to allow, {@code false} to deny
+     */
+    static boolean checkReadAccess(@Nullable TaskAuthorizationProvider provider,
+            @Nullable ServerCallContext context, String taskId, TaskOperation operation) {
+        if (provider == null) {
+            return true;
+        }
+        if (context == null) {
+            return false;
+        }
+        return provider.checkRead(context, taskId, operation);
+    }
+}

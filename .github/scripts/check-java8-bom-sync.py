@@ -32,4 +32,19 @@ extra = sorted(managed - artifacts)
 if missing or extra:
     raise SystemExit("Java8 BOM mismatch: missing=" + repr(missing) + ", inactive=" + repr(extra))
 print("Java8 BOM manages all " + str(len(artifacts)) + " active runtime modules.")
-print("agentscope-all is outside this Java8 reactor; no shaded distribution is advertised.")
+aggregate = ET.parse(root / "agentscope-distribution/agentscope-all/pom.xml").getroot()
+included = {
+    dependency.findtext("m:artifactId", namespaces=ns)
+    for dependency in aggregate.findall("m:dependencies/m:dependency", ns)
+    if dependency.findtext("m:groupId", namespaces=ns) == "cn.iocoder.agentscope"
+}
+expected = {
+    artifact for artifact in artifacts
+    if artifact.startswith("agentscope-extensions-")
+    and "starter" not in artifact
+    and not artifact.endswith("-e2e-tests")
+}
+if expected - included or included - artifacts:
+    raise SystemExit("Java8 aggregate mismatch: missing=" + repr(sorted(expected - included))
+                     + ", inactive=" + repr(sorted(included - artifacts)))
+print("Java8 aggregate covers all " + str(len(expected)) + " enabled non-starter extensions.")

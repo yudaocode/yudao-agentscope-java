@@ -3,6 +3,8 @@ title: A2A
 en_link: /dev/en/integration/protocol/a2a
 ---
 
+> `main-jdk8` 兼容分支使用 `cn.iocoder.agentscope` 坐标，适配 Spring Boot 2.7。依赖和配置见 [Java 8 接入说明](https://github.com/yudaocode/yudao-agentscope-java/blob/main-jdk8/JAVA8-COMPATIBILITY.md)。
+
 `agentscope-extensions-a2a` 实现了 [A2A 协议](https://a2aproject.github.io/A2A/)，包含两个子模块：
 
 - `agentscope-extensions-a2a-client`：把一个远端 A2A Agent 包装成本地 `Agent`，可以直接 `agent.call(...)`。

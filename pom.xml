@@ -59,7 +59,10 @@
         <module>agentscope-extensions</module>
         <module>agentscope-dependencies-bom</module>
         <module>agentscope-distribution</module>
-    <module>agentscope-runtime-sandbox-core</module><module>agentscope-harness</module><module>agentscope-durable</module></modules>
+    <module>agentscope-runtime-sandbox-core</module><module>agentscope-harness</module><module>agentscope-durable</module>
+        <module>compatibility/a2a-cdi-java8</module>
+        <module>compatibility/a2a-sdk-java8</module>
+    </modules>
 
     <description>AgentScope Java: Agent-Oriented Programming for Building LLM Applications</description>
     <url>https://github.com/agentscope-ai/agentscope-java</url>

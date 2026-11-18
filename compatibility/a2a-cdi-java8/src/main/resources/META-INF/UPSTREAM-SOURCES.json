@@ -1,0 +1,14 @@
+[
+  {
+    "sourceArchive": "jakarta.enterprise.cdi-api-4.1.0-sources.jar",
+    "sha256": "5b6573f82f5228b7ae6378cdd727fa48608e9884fd9e08e6df13272f7d2d5aa2",
+    "sourceFilesWithOriginalPath": 173,
+    "coordinates": "jakarta.enterprise:jakarta.enterprise.cdi-api:4.1.0:sources"
+  },
+  {
+    "sourceArchive": "jakarta.enterprise.lang-model-4.1.0-sources.jar",
+    "sha256": "7ee9208e7dba4647610833849e4c82421e49d74cbe9a1e26e96ec4a94ce97b94",
+    "sourceFilesWithOriginalPath": 21,
+    "coordinates": "jakarta.enterprise:jakarta.enterprise.lang-model:4.1.0:sources"
+  }
+]

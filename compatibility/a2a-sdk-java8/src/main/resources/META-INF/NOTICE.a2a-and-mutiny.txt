@@ -1,0 +1,6 @@
+This distribution includes modified source code from the A2A Java SDK
+1.5.1.Final (https://github.com/a2aproject/a2a-java) and SmallRye Mutiny
+Zero 1.3.1 (https://github.com/smallrye/smallrye-mutiny-zero). The original
+header notices and Apache License 2.0 apply. The source is adapted to Java 8,
+including Java API substitutions and a cancellable streaming client derived
+from the upstream Android transport.

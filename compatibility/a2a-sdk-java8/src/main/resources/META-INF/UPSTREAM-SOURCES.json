@@ -1,0 +1,74 @@
+[
+  {
+    "sourceArchive": "a2a-java-sdk-client-sources.jar",
+    "sha256": "ba661f3e62a942d3278bdd64be1983864bd80704f53f223a7be36a78b4d52366",
+    "sourceFilesWithOriginalPath": 12,
+    "coordinates": "org.a2aproject.sdk:a2a-java-sdk-client:1.5.1.Final:sources"
+  },
+  {
+    "sourceArchive": "a2a-java-sdk-client-transport-jsonrpc-sources.jar",
+    "sha256": "92208d52786f2ffc1d8a80a22ca4ddaa4f6cdeba7ddc117ae45d74ace0f8105b",
+    "sourceFilesWithOriginalPath": 7,
+    "coordinates": "org.a2aproject.sdk:a2a-java-sdk-client-transport-jsonrpc:1.5.1.Final:sources"
+  },
+  {
+    "sourceArchive": "a2a-java-sdk-client-transport-spi-sources.jar",
+    "sha256": "c2fcbb701dc93a0fa22630c26f45ce9256a391685c9f2b66a028efd4721298ac",
+    "sourceFilesWithOriginalPath": 16,
+    "coordinates": "org.a2aproject.sdk:a2a-java-sdk-client-transport-spi:1.5.1.Final:sources"
+  },
+  {
+    "sourceArchive": "a2a-java-sdk-common-sources.jar",
+    "sha256": "a75c13eb13354949a54a00746c951b6e5716bd36179cec6c47c56e17112c99ad",
+    "sourceFilesWithOriginalPath": 10,
+    "coordinates": "org.a2aproject.sdk:a2a-java-sdk-common:1.5.1.Final:sources"
+  },
+  {
+    "sourceArchive": "a2a-java-sdk-http-client-android-sources.jar",
+    "sha256": "52cdc84bca96028033608fea11b4be6e9cf47ea133544e707063a01b518d3439",
+    "sourceFilesWithOriginalPath": 0,
+    "coordinates": "org.a2aproject.sdk:a2a-java-sdk-http-client-android:1.5.1.Final:sources"
+  },
+  {
+    "sourceArchive": "a2a-java-sdk-http-client-sources.jar",
+    "sha256": "45ab2fd997c05338930e11f98c54a47f8beb659d5d40e7905b2115bfb5c45b77",
+    "sourceFilesWithOriginalPath": 13,
+    "coordinates": "org.a2aproject.sdk:a2a-java-sdk-http-client:1.5.1.Final:sources"
+  },
+  {
+    "sourceArchive": "a2a-java-sdk-jsonrpc-common-sources.jar",
+    "sha256": "9ab4adf4202a6b3ce173f011bfd80c4920016eaf7a8dc4a5e86b77dacd5a7173",
+    "sourceFilesWithOriginalPath": 36,
+    "coordinates": "org.a2aproject.sdk:a2a-java-sdk-jsonrpc-common:1.5.1.Final:sources"
+  },
+  {
+    "sourceArchive": "a2a-java-sdk-server-common-sources.jar",
+    "sha256": "a8d292bfc336da9f32e4c2b2ca127c1a085a9e00afefefaf93b7a24c04dc7728",
+    "sourceFilesWithOriginalPath": 90,
+    "coordinates": "org.a2aproject.sdk:a2a-java-sdk-server-common:1.5.1.Final:sources"
+  },
+  {
+    "sourceArchive": "a2a-java-sdk-spec-grpc-sources.jar",
+    "sha256": "4b47ffe62866bacfaf97f0274104841c3d4861780b6b227f857d15205c97320a",
+    "sourceFilesWithOriginalPath": 179,
+    "coordinates": "org.a2aproject.sdk:a2a-java-sdk-spec-grpc:1.5.1.Final:sources"
+  },
+  {
+    "sourceArchive": "a2a-java-sdk-spec-sources.jar",
+    "sha256": "5a06c2f8544ac55aaca00501fa3e0cdae03cf84a64ea4cf0fdcde4444421a513",
+    "sourceFilesWithOriginalPath": 84,
+    "coordinates": "org.a2aproject.sdk:a2a-java-sdk-spec:1.5.1.Final:sources"
+  },
+  {
+    "sourceArchive": "a2a-java-sdk-transport-jsonrpc-sources.jar",
+    "sha256": "00c032535d23333c28fee0e543b997e91247cc51820d791b645263e8efab9cc0",
+    "sourceFilesWithOriginalPath": 3,
+    "coordinates": "org.a2aproject.sdk:a2a-java-sdk-transport-jsonrpc:1.5.1.Final:sources"
+  },
+  {
+    "sourceArchive": "mutiny-zero-1.3.1-sources.jar",
+    "sha256": "94e354b454bd145e973315258291ffbf13e2d48adc07b1e2c98394a5a7c262d0",
+    "sourceFilesWithOriginalPath": 35,
+    "coordinates": "io.smallrye.reactive:mutiny-zero:1.3.1:sources"
+  }
+]

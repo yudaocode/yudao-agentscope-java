@@ -3,6 +3,8 @@ title: Nacos
 zh_link: /dev/zh/integration/infrastructure/nacos
 ---
 
+> On the `main-jdk8` compatibility branch, use the `cn.iocoder.agentscope` coordinates and Spring Boot 2.7. The [Java 8 guide](https://github.com/yudaocode/yudao-agentscope-java/blob/main-jdk8/JAVA8-COMPATIBILITY.md) lists the matching modules and settings.
+
 `agentscope-extensions-nacos` uses [Nacos](https://nacos.io/) as AgentScope's unified control plane: register and discover A2A Agents, hot-load prompts, and host skills. It contains three sub-modules — pick the ones you need.
 
 | Sub-module | Problem it solves |

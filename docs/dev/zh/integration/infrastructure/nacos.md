@@ -3,6 +3,8 @@ title: Nacos
 en_link: /dev/en/integration/infrastructure/nacos
 ---
 
+> `main-jdk8` 兼容分支使用 `cn.iocoder.agentscope` 坐标，适配 Spring Boot 2.7。依赖和配置见 [Java 8 接入说明](https://github.com/yudaocode/yudao-agentscope-java/blob/main-jdk8/JAVA8-COMPATIBILITY.md)。
+
 `agentscope-extensions-nacos` 把 [Nacos](https://nacos.io/) 用作 AgentScope 的统一控制面：注册发现 A2A Agent、动态加载 Prompt、托管 Skill。包含三个子模块，按需组合使用。
 
 | 子模块 | 解决的问题 |

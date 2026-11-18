@@ -3,6 +3,8 @@ title: A2A
 zh_link: /dev/zh/integration/protocol/a2a
 ---
 
+> On the `main-jdk8` compatibility branch, use the `cn.iocoder.agentscope` coordinates and Spring Boot 2.7. The [Java 8 guide](https://github.com/yudaocode/yudao-agentscope-java/blob/main-jdk8/JAVA8-COMPATIBILITY.md) lists the matching modules and settings.
+
 `agentscope-extensions-a2a` implements the [A2A protocol](https://a2aproject.github.io/A2A/) and ships two sub-modules:
 
 - `agentscope-extensions-a2a-client`: wraps a remote A2A Agent as a local `Agent` you can `call(...)` directly.

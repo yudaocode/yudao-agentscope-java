@@ -83,7 +83,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.reactivestreams.FlowAdapters;
+import org.springframework.ai.compat.jdkhttp.FlowAdapters;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
@@ -375,7 +375,7 @@ class JsonRpcTransportWrapperTest {
 
             Flux<SendStreamingMessageResponse> unbuffered =
                     Flux.from(
-                            FlowAdapters.toPublisher(
+                            FlowAdapters.flowPublisherToFlux(
                                     burstPublisher(List.of(reasoningResponse, textResponse))));
 
             AssertionError overflowError =
@@ -391,7 +391,7 @@ class JsonRpcTransportWrapperTest {
 
             Flux<SendStreamingMessageResponse> buffered =
                     Flux.from(
-                                    FlowAdapters.toPublisher(
+                                    FlowAdapters.flowPublisherToFlux(
                                             burstPublisher(
                                                     List.of(reasoningResponse, textResponse))))
                             .onBackpressureBuffer();
@@ -445,7 +445,7 @@ class JsonRpcTransportWrapperTest {
                             .doOnCancel(() -> cancelled.set(true));
             when(jsonRpcHandler.onMessageSendStream(
                             any(SendStreamingMessageRequest.class), any(ServerCallContext.class)))
-                    .thenReturn(FlowAdapters.toFlowPublisher(responses));
+                    .thenReturn(FlowAdapters.publisherToFlowPublisher(responses));
 
             Object result = transportWrapper.handleRequest(body, Map.of(), Map.of());
 

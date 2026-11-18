@@ -19,6 +19,7 @@ package io.agentscope.core.a2a.server.utils;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
@@ -49,7 +50,9 @@ public class NetworkUtils {
      * @throws SocketException network exception
      */
     public static String getLocalIpAddress() throws SocketException {
-        Stream<NetworkInterface> networkInterfaces = NetworkInterface.networkInterfaces();
+        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+        Stream<NetworkInterface> networkInterfaces =
+                interfaces == null ? Stream.empty() : Collections.list(interfaces).stream();
 
         List<NetworkInterface> nis =
                 networkInterfaces

@@ -71,9 +71,9 @@ import org.a2aproject.sdk.spec.TransportProtocol;
 import org.a2aproject.sdk.spec.UnsupportedOperationError;
 import org.a2aproject.sdk.transport.jsonrpc.context.JSONRPCContextKeys;
 import org.a2aproject.sdk.transport.jsonrpc.handler.JSONRPCHandler;
-import org.reactivestreams.FlowAdapters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.compat.jdkhttp.FlowAdapters;
 import reactor.core.publisher.BufferOverflowStrategy;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.SynchronousSink;
@@ -311,7 +311,7 @@ public class JsonRpcTransportWrapper implements TransportWrapper<String, Object>
         String method = (String) context.getState().get(JSONRPCContextKeys.METHOD_NAME_KEY);
         Object requestId = request.getId();
         return applyStreamingBackpressureBuffer(
-                        Flux.from(FlowAdapters.toPublisher(publisher)), method, requestId)
+                        FlowAdapters.flowPublisherToFlux(publisher), method, requestId)
                 .delaySubscription(Duration.ofMillis(10));
     }
 

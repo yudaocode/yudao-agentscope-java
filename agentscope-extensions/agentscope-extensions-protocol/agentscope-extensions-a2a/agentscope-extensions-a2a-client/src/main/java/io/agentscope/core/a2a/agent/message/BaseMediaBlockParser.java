@@ -17,6 +17,7 @@
 package io.agentscope.core.a2a.agent.message;
 
 import io.agentscope.core.a2a.agent.utils.LoggerUtil;
+import io.agentscope.core.formatter.MediaUtils;
 import io.agentscope.core.message.Base64Source;
 import io.agentscope.core.message.ContentBlock;
 import io.agentscope.core.message.Source;
@@ -25,7 +26,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.UUID;
 import org.a2aproject.sdk.spec.FileContent;
 import org.a2aproject.sdk.spec.FilePart;
@@ -99,8 +99,11 @@ public abstract class BaseMediaBlockParser<T extends ContentBlock>
         try {
             URL javaUrl = new URL(url);
             String mimeType = Files.probeContentType(Paths.get(javaUrl.getPath()));
-            if (Objects.isNull(mimeType)) {
-                return getMediaType();
+            if (mimeType == null) {
+                mimeType = MediaUtils.determineMediaType(javaUrl.getPath());
+                if ("audio/mp3".equals(mimeType)) {
+                    mimeType = "audio/mpeg";
+                }
             }
             return mimeType.startsWith(getMediaType()) ? mimeType : getMediaType();
         } catch (Exception ignored) {

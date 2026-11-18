@@ -44,6 +44,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.a2aproject.sdk.jsonrpc.common.json.JsonProcessingException;
 import org.a2aproject.sdk.jsonrpc.common.json.JsonUtil;
 import org.a2aproject.sdk.server.events.MainEventBus;
@@ -536,8 +537,8 @@ public class AgentScopeA2aServer implements AutoCloseable {
         }
 
         private Map<String, TransportWrapperBuilder> loadTransportBuilders() {
-            return ServiceLoader.load(TransportWrapperBuilder.class).stream()
-                    .map(ServiceLoader.Provider::get)
+            return StreamSupport.stream(
+                            ServiceLoader.load(TransportWrapperBuilder.class).spliterator(), false)
                     .filter(builder -> null != builder.getTransportType())
                     .collect(
                             Collectors.toMap(

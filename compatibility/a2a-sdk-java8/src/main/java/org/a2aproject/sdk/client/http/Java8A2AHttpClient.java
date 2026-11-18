@@ -1,0 +1,599 @@
+package org.a2aproject.sdk.client.http;
+
+import static org.a2aproject.sdk.util.Assert.checkNotNullParam;
+
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_MULT_CHOICE;
+import static java.net.HttpURLConnection.HTTP_OK;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+
+import org.a2aproject.sdk.common.A2AErrorMessages;
+import org.a2aproject.sdk.spec.A2AClientHTTPError;
+import org.jspecify.annotations.Nullable;
+import org.springframework.ai.compat.jdkhttp.FlowAdapters;
+import org.springframework.ai.compat.jdkhttp.HttpClient;
+import org.springframework.ai.compat.jdkhttp.HttpRequest;
+import org.springframework.ai.compat.jdkhttp.HttpResponse;
+
+/**
+ * Java 8 HTTP transport adapted from the A2A SDK HttpURLConnection transport.
+ * Streaming uses the cancellable Spring AI Java 8 HTTP client.
+ *
+ * <p><b>Security Note:</b> This client does not follow HTTP redirects automatically
+ * to prevent credential leakage to third-party origins. Explicitly enabled GET and POST redirects
+ * are followed once only when the target has the same origin. {@link HttpURLConnection} cannot
+ * isolate process-wide {@code CookieHandler} or {@code Authenticator} state for one request, so
+ * cross-origin redirects are deliberately not followed even when
+ * {@link A2AHttpClient.GetBuilder#followRedirects(boolean)} or
+ * {@link A2AHttpClient.PostBuilder#followRedirects(boolean)} is enabled.
+ *
+ * @author 芋道源码
+ */
+public class Java8A2AHttpClient implements A2AHttpClient {
+
+  private static final Executor NET_EXECUTOR = Executors.newCachedThreadPool(r -> {
+    Thread t = new Thread(r, "A2A-Java8-Net");
+    t.setDaemon(true);
+    return t;
+  });
+
+  private static final Duration STREAM_TIMEOUT = Duration.ofSeconds(60);
+
+  private static final class StreamingHttp {
+    private static final HttpClient CLIENT = HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(15))
+        .followRedirects(HttpClient.Redirect.NEVER)
+        .build();
+  }
+
+  private final SSEParserConfig sseParserConfig;
+  private final RedirectHeaderPolicy redirectHeaderPolicy;
+
+  public Java8A2AHttpClient() {
+    this(SSEParserConfig.DEFAULT, RedirectHeaderPolicy.DEFAULT);
+  }
+
+  /**
+   * Creates a new Android HTTP client with a custom redirect header policy.
+   *
+   * @param redirectHeaderPolicy policy applied to explicitly enabled POST redirects
+   * @return a client with default SSE parser limits and the supplied redirect policy
+   */
+  public static Java8A2AHttpClient withRedirectHeaderPolicy(
+      RedirectHeaderPolicy redirectHeaderPolicy) {
+    return new Java8A2AHttpClient(SSEParserConfig.DEFAULT, redirectHeaderPolicy);
+  }
+
+  /**
+   * Creates a new Android HTTP client with custom SSE parser limits.
+   *
+   * @param sseParserConfig the SSE parser configuration to use for streaming responses
+   */
+  public Java8A2AHttpClient(SSEParserConfig sseParserConfig) {
+    this(sseParserConfig, RedirectHeaderPolicy.DEFAULT);
+  }
+
+  /**
+   * Creates a new Android HTTP client with custom parser limits and redirect policy.
+   *
+   * @param sseParserConfig the SSE parser configuration to use for streaming responses
+   * @param redirectHeaderPolicy policy applied to explicitly enabled POST redirects
+   */
+  public Java8A2AHttpClient(
+      SSEParserConfig sseParserConfig, RedirectHeaderPolicy redirectHeaderPolicy) {
+    this.sseParserConfig = checkNotNullParam("sseParserConfig", sseParserConfig);
+    this.redirectHeaderPolicy = checkNotNullParam("redirectHeaderPolicy", redirectHeaderPolicy);
+  }
+
+  @Override
+  public GetBuilder createGet() {
+    return new Java8GetBuilder(sseParserConfig, redirectHeaderPolicy);
+  }
+
+  @Override
+  public PostBuilder createPost() {
+    return new Java8PostBuilder(sseParserConfig, redirectHeaderPolicy);
+  }
+
+  @Override
+  public DeleteBuilder createDelete() {
+    return new Java8DeleteBuilder(sseParserConfig, redirectHeaderPolicy);
+  }
+
+  private abstract static class Java8Builder<T extends Builder<T>> implements Builder<T> {
+    protected String url = "";
+    protected Map<String, String> headers = new HashMap<>();
+    protected final SSEParserConfig sseParserConfig;
+    protected final RedirectHeaderPolicy redirectHeaderPolicy;
+
+    Java8Builder(SSEParserConfig sseParserConfig, RedirectHeaderPolicy redirectHeaderPolicy) {
+      this.sseParserConfig = sseParserConfig;
+      this.redirectHeaderPolicy = redirectHeaderPolicy;
+    }
+
+    @Override
+    public T url(String url) {
+      this.url = url;
+      return self();
+    }
+
+    @Override
+    public T addHeader(String name, String value) {
+      headers.put(name, value);
+      return self();
+    }
+
+    @Override
+    public T addHeaders(Map<String, String> headers) {
+      if (headers != null) {
+        this.headers.putAll(headers);
+      }
+      return self();
+    }
+
+    @SuppressWarnings("unchecked")
+    protected T self() {
+      return (T) this;
+    }
+
+    protected HttpURLConnection createConnection(String method, boolean isSSE) throws IOException {
+      return createConnection(url, method, headers, isSSE);
+    }
+
+    protected HttpURLConnection createConnection(
+        String requestUrl, String method, Map<String, String> requestHeaders, boolean isSSE)
+        throws IOException {
+      URL urlObj;
+      try {
+        urlObj = new URI(requestUrl).toURL();
+      } catch (URISyntaxException e) {
+        throw new MalformedURLException("Invalid URL: " + url);
+      }
+      HttpURLConnection connection = (HttpURLConnection) urlObj.openConnection();
+      connection.setRequestMethod(method);
+      connection.setConnectTimeout(15000); // 15 seconds
+      connection.setReadTimeout(60000);    // 60 seconds
+      // Security: Disable automatic redirect following to prevent credential leakage
+      connection.setInstanceFollowRedirects(false);
+      for (Map.Entry<String, String> header : requestHeaders.entrySet()) {
+        connection.setRequestProperty(header.getKey(), header.getValue());
+      }
+      if (isSSE) {
+        connection.setRequestProperty(A2AHttpClient.ACCEPT, A2AHttpClient.EVENT_STREAM);
+      }
+      return connection;
+    }
+
+    protected static String readStreamWithLimit(InputStream is) throws IOException {
+      if (is == null) {
+        return "";
+      }
+      int maxResponseSize = 10 * 1024 * 1024; // 10 MB
+      try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+        StringBuilder sb = new StringBuilder();
+        String line;
+        boolean first = true;
+        while ((line = reader.readLine()) != null) {
+          if (sb.length() + line.length() > maxResponseSize) {
+            throw new IOException("Response size exceeds limit");
+          }
+          if (!first) {
+            sb.append('\n');
+          }
+          sb.append(line);
+          first = false;
+        }
+        return sb.toString();
+      }
+    }
+
+    /**
+     * Reads the next line from {@code is}, treating LF, CRLF, and bare CR as terminators
+     * per the SSE specification, and enforcing the byte limit <em>while accumulating
+     * bytes</em> — not after a full line has been materialised.
+     *
+     * <p>The caller must provide a {@link BoundedLineAccumulator} and call
+     * {@link BoundedLineAccumulator#reset()} between lines. After this method returns
+     * {@code true}, check {@link BoundedLineAccumulator#isTooLong()} to distinguish
+     * between a valid line and one that exceeded the limit.
+     *
+     * <p>The {@code is} parameter must support {@link InputStream#mark(int)} (e.g.
+     * {@link java.io.BufferedInputStream}) so that CR at end-of-buffer can be resolved
+     * without consuming the following byte.
+     *
+     * @param is the input stream to read from (must support mark/reset)
+     * @param accumulator the accumulator to use for byte collection and limit enforcement
+     * @return {@code true} if a line was read, {@code false} at end-of-stream
+     */
+    static boolean readBoundedLine(InputStream is, BoundedLineAccumulator accumulator) throws IOException {
+      boolean hasReadAnyBytes = false;
+
+      while (true) {
+        int b = is.read();
+        if (b == -1) {
+          return hasReadAnyBytes || accumulator.isTooLong();
+        }
+        hasReadAnyBytes = true;
+        if (b == '\n') {
+          return true;
+        }
+        if (b == '\r') {
+          consumeOptionalLF(is);
+          return true;
+        }
+        accumulator.addByte(b);
+      }
+    }
+
+    private static void consumeOptionalLF(InputStream is) throws IOException {
+      is.mark(1);
+      int next = is.read();
+      if (next != '\n' && next != -1) {
+        is.reset();
+      }
+    }
+
+    protected A2AHttpResponse execute(HttpURLConnection connection) throws IOException {
+      int status = connection.getResponseCode();
+      A2AHttpHeaders responseHeaders = fromConnectionHeaders(connection.getHeaderFields());
+      if (status == HTTP_UNAUTHORIZED) {
+        throw new IOException(A2AErrorMessages.AUTHENTICATION_FAILED,
+            new A2AClientHTTPError(HTTP_UNAUTHORIZED, A2AErrorMessages.AUTHENTICATION_FAILED,
+                null, responseHeaders.toMap()));
+      } else if (status == HTTP_FORBIDDEN) {
+        throw new IOException(A2AErrorMessages.AUTHORIZATION_FAILED,
+            new A2AClientHTTPError(HTTP_FORBIDDEN, A2AErrorMessages.AUTHORIZATION_FAILED,
+                null, responseHeaders.toMap()));
+      }
+
+      String body = "";
+      try (InputStream is =
+          (status >= HTTP_OK && status < HTTP_MULT_CHOICE)
+              ? connection.getInputStream()
+              : connection.getErrorStream()) {
+        body = readStreamWithLimit(is);
+      }
+
+      return new Java8HttpResponse(status, body, responseHeaders);
+    }
+
+    private void processSSEResponse(
+        HttpResponse<InputStream> response,
+        Consumer<ServerSentEvent> messageConsumer,
+        Consumer<Throwable> errorConsumer,
+        Runnable completeRunnable) throws IOException {
+      int status = response.statusCode();
+      InputStream body = response.body();
+      if (!(status >= HTTP_OK && status < HTTP_MULT_CHOICE)) {
+        if (status == HTTP_UNAUTHORIZED || status == HTTP_FORBIDDEN) {
+          String message = status == HTTP_UNAUTHORIZED
+              ? A2AErrorMessages.AUTHENTICATION_FAILED
+              : A2AErrorMessages.AUTHORIZATION_FAILED;
+          errorConsumer.accept(new IOException(message,
+              new A2AClientHTTPError(status, message, null, response.headers().map())));
+          return;
+        }
+        String errorBody = readStreamWithLimit(body);
+        if (!errorBody.isEmpty()) {
+          messageConsumer.accept(new ServerSentEvent(errorBody));
+        } else {
+          errorConsumer.accept(new IOException("Request failed with status " + status));
+        }
+        return;
+      }
+      String contentType = response.headers().firstValue(CONTENT_TYPE).orElse("");
+      if (contentType.contains(EVENT_STREAM)) {
+        readSSEStream(body, sseParserConfig, messageConsumer, errorConsumer);
+      } else {
+        readNonSSEStream(body, messageConsumer);
+      }
+      completeRunnable.run();
+    }
+
+    private static void readSSEStream(
+        InputStream is,
+        SSEParserConfig config,
+        Consumer<ServerSentEvent> messageConsumer,
+        Consumer<Throwable> errorConsumer) throws IOException {
+      InputStream buffered = new java.io.BufferedInputStream(is);
+      BoundedLineAccumulator accumulator = new BoundedLineAccumulator(config.maxLineLength());
+      ServerSentEventParser sseParser = new ServerSentEventParser(messageConsumer, errorConsumer, config);
+      while (readBoundedLine(buffered, accumulator)) {
+        if (accumulator.isTooLong()) {
+          sseParser.processLineTooLong();
+        } else {
+          sseParser.processLine(accumulator.toLine());
+        }
+        accumulator.reset();
+      }
+      sseParser.flush();
+    }
+
+    private static void readNonSSEStream(
+        InputStream is,
+        Consumer<ServerSentEvent> messageConsumer) throws IOException {
+      StringBuilder bodyBuffer = new StringBuilder();
+      BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+      String line;
+      while ((line = reader.readLine()) != null) {
+        if (!line.isEmpty()) {
+          if (bodyBuffer.length() > 0) {
+            bodyBuffer.append('\n');
+          }
+          bodyBuffer.append(line);
+        }
+      }
+      String body = bodyBuffer.toString();
+      if (!body.isEmpty()) {
+        messageConsumer.accept(new ServerSentEvent(body));
+      }
+    }
+
+    protected CompletableFuture<Void> executeAsyncSSE(
+        String method, String body,
+        Consumer<ServerSentEvent> messages,
+        Consumer<Throwable> errors,
+        Runnable completed) throws IOException {
+      HttpRequest.Builder builder;
+      try {
+        builder = HttpRequest.newBuilder(new URI(url)).timeout(STREAM_TIMEOUT);
+      } catch (IllegalArgumentException | URISyntaxException invalid) {
+        throw new IOException("Invalid SSE URL", invalid);
+      }
+      headers.forEach((key, value) -> {
+        if (!ACCEPT.equalsIgnoreCase(key)) {
+          builder.header(key, value);
+        }
+      });
+      builder.header(ACCEPT, EVENT_STREAM);
+      if ("POST".equals(method)) {
+        builder.POST(HttpRequest.BodyPublishers.ofString(body));
+      } else {
+        builder.GET();
+      }
+      CompletableFuture<Void> result = new CompletableFuture<>();
+      AtomicReference<InputStream> active = new AtomicReference<>();
+      HttpResponse.BodyHandler<InputStream> streamBody = publisher -> HttpResponse.BodyHandlers.ofInputStream()
+          .apply(FlowAdapters.publisherToFlowPublisher(
+              FlowAdapters.flowPublisherToFlux(publisher).timeout(STREAM_TIMEOUT)));
+      CompletableFuture<HttpResponse<InputStream>> pending =
+          StreamingHttp.CLIENT.sendAsync(builder.build(), streamBody);
+      result.whenComplete((ignored, failure) -> {
+        if (result.isCancelled()) {
+          pending.cancel(true);
+          closeBody(active.get());
+        }
+      });
+      pending.whenComplete((response, failure) -> {
+        if (failure != null) {
+          if (!result.isCancelled()) {
+            try {
+              errors.accept(failure);
+            } finally {
+              result.completeExceptionally(failure);
+            }
+          }
+          return;
+        }
+        active.set(response.body());
+        if (result.isCancelled()) {
+          closeBody(response.body());
+          return;
+        }
+        NET_EXECUTOR.execute(() -> {
+          try (InputStream responseBody = response.body()) {
+            processSSEResponse(response,
+                message -> { if (!result.isCancelled()) messages.accept(message); },
+                error -> { if (!result.isCancelled()) errors.accept(error); },
+                () -> { if (!result.isCancelled()) completed.run(); });
+            result.complete(null);
+          } catch (Exception error) {
+            if (!result.isCancelled()) {
+              try {
+                errors.accept(error);
+              } finally {
+                result.completeExceptionally(error);
+              }
+            }
+          }
+        });
+      });
+      return result;
+    }
+
+    private static void closeBody(InputStream body) {
+      if (body != null) {
+        try {
+          body.close();
+        } catch (IOException ignored) {
+          // The cancelled exchange has already finished from the caller's perspective.
+        }
+      }
+    }
+  }
+
+  private static class Java8GetBuilder extends Java8Builder<GetBuilder> implements GetBuilder {
+    private boolean followRedirects = false;
+
+Java8GetBuilder(SSEParserConfig sseParserConfig, RedirectHeaderPolicy redirectHeaderPolicy) {
+      super(sseParserConfig, redirectHeaderPolicy);
+    }
+
+    @Override
+    public GetBuilder followRedirects(boolean follow) {
+      this.followRedirects = follow;
+      return self();
+    }
+
+    @Override
+    public A2AHttpResponse get() throws IOException {
+      HttpURLConnection connection = createConnection("GET", false);
+      try {
+        A2AHttpResponse response = execute(connection);
+        if (!followRedirects) {
+          return response;
+        }
+        String location = response.headers().firstValue("Location");
+        RedirectHeaderPolicy.RedirectedRequest redirect = redirectHeaderPolicy
+            .redirectedRequest(URI.create(url), response.status(), location, headers)
+            .orElse(null);
+        if (redirect == null) {
+          return response;
+        }
+        if (!RedirectHeaderPolicy.sameOrigin(URI.create(url), redirect.target())) {
+          // HttpURLConnection cannot isolate process-wide CookieHandler or Authenticator state
+          // for an individual request. Never follow across an origin boundary.
+          return response;
+        }
+        connection.disconnect();
+        connection = createConnection(redirect.target().toString(), "GET", redirect.headers(), false);
+        return execute(connection);
+      } catch (IOException e) {
+        connection.disconnect();
+        throw e;
+      }
+    }
+
+    @Override
+    public CompletableFuture<Void> getAsyncSSE(
+        Consumer<ServerSentEvent> messageConsumer,
+        Consumer<Throwable> errorConsumer,
+        Runnable completeRunnable)
+        throws IOException {
+      return executeAsyncSSE("GET", null, messageConsumer, errorConsumer, completeRunnable);
+    }
+  }
+
+  private static class Java8PostBuilder extends Java8Builder<PostBuilder>
+      implements PostBuilder {
+    private String body = "";
+    private boolean followRedirects = false;
+
+Java8PostBuilder(SSEParserConfig sseParserConfig, RedirectHeaderPolicy redirectHeaderPolicy) {
+      super(sseParserConfig, redirectHeaderPolicy);
+    }
+
+    @Override
+    public PostBuilder body(String body) {
+      this.body = body;
+      return this;
+    }
+
+    @Override
+    public PostBuilder followRedirects(boolean follow) {
+      this.followRedirects = follow;
+      return self();
+    }
+
+    @Override
+    public A2AHttpResponse post() throws IOException {
+      HttpURLConnection connection = createConnection("POST", false);
+      connection.setDoOutput(true);
+      try {
+        try (OutputStream os = connection.getOutputStream()) {
+          os.write(body.getBytes(StandardCharsets.UTF_8));
+        }
+        A2AHttpResponse response = execute(connection);
+        if (!followRedirects) {
+          return response;
+        }
+
+        String location = response.headers().firstValue("Location");
+        RedirectHeaderPolicy.RedirectedRequest redirect = redirectHeaderPolicy
+            .redirectedRequest(URI.create(url), response.status(), location, headers)
+            .orElse(null);
+        if (redirect == null) {
+          return response;
+        }
+        if (!RedirectHeaderPolicy.sameOrigin(URI.create(url), redirect.target())) {
+          // HttpURLConnection cannot isolate process-wide CookieHandler or Authenticator state
+          // for an individual request. Never follow across an origin boundary.
+          return response;
+        }
+
+        connection.disconnect();
+        connection = createConnection(
+            redirect.target().toString(),
+            redirect.redirectAsGet() ? "GET" : "POST",
+            redirect.headers(),
+            false);
+        if (!redirect.redirectAsGet()) {
+          connection.setDoOutput(true);
+          try (OutputStream os = connection.getOutputStream()) {
+            os.write(body.getBytes(StandardCharsets.UTF_8));
+          }
+        }
+        return execute(connection);
+      } catch (IOException e) {
+        connection.disconnect();
+        throw e;
+      }
+    }
+
+    @Override
+    public CompletableFuture<Void> postAsyncSSE(
+        Consumer<ServerSentEvent> messageConsumer,
+        Consumer<Throwable> errorConsumer,
+        Runnable completeRunnable)
+        throws IOException {
+      return executeAsyncSSE("POST", body, messageConsumer, errorConsumer, completeRunnable);
+    }
+  }
+
+  private static class Java8DeleteBuilder extends Java8Builder<DeleteBuilder>
+      implements DeleteBuilder {
+Java8DeleteBuilder(SSEParserConfig sseParserConfig, RedirectHeaderPolicy redirectHeaderPolicy) {
+      super(sseParserConfig, redirectHeaderPolicy);
+    }
+
+    @Override
+    public A2AHttpResponse delete() throws IOException {
+      HttpURLConnection connection = createConnection("DELETE", false);
+      try {
+        return execute(connection);
+      } catch (IOException e) {
+        connection.disconnect();
+        throw e;
+      }
+    }
+  }
+
+  private static A2AHttpHeaders fromConnectionHeaders(@Nullable Map<String, List<String>> headerFields) {
+    // HttpURLConnection.getHeaderFields() may include a null key for the HTTP status line;
+    // A2AHttpHeaders.of() filters those out automatically.
+    return A2AHttpHeaders.of(headerFields != null ? headerFields : Map.of());
+  }
+
+  private record Java8HttpResponse(int status, String body, A2AHttpHeaders headers) implements A2AHttpResponse {
+    @Override
+    public boolean success() {
+      return status >= HTTP_OK && status < HTTP_MULT_CHOICE;
+    }
+
+    @Override
+    public A2AHttpHeaders headers() {
+      return headers;
+    }
+  }
+}
