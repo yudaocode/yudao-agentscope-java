@@ -31,12 +31,14 @@ Maven groupId 为 **`cn.iocoder.agentscope`**，artifactId 和 Java 包名沿用
 
 上一检查点为 **84 模块、66 个运行库**，新增 **E2B 沙箱后端**。完整原生JDK8 `clean install` 通过 **10920项**，零失败/错误，80项条件跳过；E2B组件196项中9项真实云条件跳过，独立Boot2消费3项全部通过、零跳过。使用时按BOM引入 `agentscope-extensions-sandbox-e2b`，并显式引入其provided依赖 `agentscope-harness`；完整配置、Java调用示例与Boot2父POM覆盖见 [Java8兼容说明](JAVA8-COMPATIBILITY.md#e2b-backend-on-java-8) 和 [独立消费者](compatibility-tests/boot2-e2b)。真实E2B云环境及其他未列入默认构建的沙箱后端尚未验收。
 
-本批新增 Higress MCP 扩展。85 模块原生 JDK8 完整构建共 10,994 项，0 失败、0 错误、104 项条件跳过。Higress 组件 74 项和独立 Boot2 消费 1 项全部通过。导入兼容 BOM 后添加 `agentscope-extensions-higress`，按[接入说明](JAVA8-COMPATIBILITY.md#higress-mcp-on-java-8)设置自己的网关地址和认证。独立测试使用本地 MCP HTTP 服务，真实网关按部署环境验收。
+上一批新增 Higress MCP 扩展。85 模块原生 JDK8 完整构建共 10,994 项，0 失败、0 错误、104 项条件跳过。Higress 组件 74 项和独立 Boot2 消费 1 项全部通过。导入兼容 BOM 后添加 `agentscope-extensions-higress`，按[接入说明](JAVA8-COMPATIBILITY.md#higress-mcp-on-java-8)设置自己的网关地址和认证。独立测试使用本地 MCP HTTP 服务，真实网关按部署环境验收。
+
+AgentRun 与 Daytona 沙箱后端已加入默认构建。87 模块在原生 JDK8 上共 11,021 项，0 失败、0 错误、104 项条件跳过。AgentRun 组件 26 项、Daytona 组件 1 项，两个独立 Boot2 消费各 1 项，均通过。使用时按 BOM 添加后端和 `agentscope-harness`，配置见 [Java8 接入说明](JAVA8-COMPATIBILITY.md#agentrun-and-daytona-on-java-8)。真实云端环境按各自部署验收。
 
 
 ## 如何使用
 
-当前默认构建包含 85 个 Maven 模块、67 个运行库：核心、Harness、AG-UI、独立 runtime-sandbox、DashScope/OpenAI/OpenAI 官方 Responses/Ollama/Anthropic/Gemini 及其 starter、AG-UI MVC/WebFlux starter、Chat Completions Web SDK 与 starter，以及 JDBC/MySQL/PostgreSQL/Redis/MongoDB 存储，OSS/COS 对象存储、Git/MySQL/PostgreSQL 技能仓库，以及 Mem0/百炼/ReMe Memory、百炼/Dify/Haystack/RAGFlow RAG 与 Quartz/XXL-Job 调度。已纳入真实 JDK 8 回归；其余扩展源码保留，未列入兼容 BOM。详细接入方式见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
+当前默认构建包含 87 个 Maven 模块、69 个运行库：核心、Harness、AG-UI、独立 runtime-sandbox、DashScope/OpenAI/OpenAI 官方 Responses/Ollama/Anthropic/Gemini 及其 starter、AG-UI MVC/WebFlux starter、Chat Completions Web SDK 与 starter，以及 JDBC/MySQL/PostgreSQL/Redis/MongoDB 存储，OSS/COS 对象存储、Git/MySQL/PostgreSQL 技能仓库，以及 Mem0/百炼/ReMe Memory、百炼/Dify/Haystack/RAGFlow RAG 与 Quartz/XXL-Job 调度。已纳入真实 JDK 8 回归；其余扩展源码保留，未列入兼容 BOM。详细接入方式见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
 
 Durable 按需引入 `agentscope-durable-runtime`、`agentscope-durable-worker` 或 `agentscope-extensions-durable-jdbc` / `-http` 等（同 groupId、由 BOM 管理）。`LocalBackend.open(Paths.get("./data/durable"))` 提供 SQLite 和不可变文件存储；业务保存并关闭返回的 `SessionBackend`。不要在 JDK8 业务源码中直接使用上游示例里的 `var`、`record` 或 `List.of`。完整原生 Boot2 示例见 [boot2-durable](compatibility-tests/boot2-durable)。对象存储的 MinIO/OSS SDK 为可选依赖，使用对应后端时需自行按 BOM 引入。
 

@@ -33,5 +33,7 @@
 
     <modules>
         <module>agentscope-extensions-sandbox-e2b</module>
+        <module>agentscope-extensions-sandbox-agentrun</module>
+        <module>agentscope-extensions-sandbox-daytona</module>
     </modules>
 </project>

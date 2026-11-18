@@ -6,7 +6,7 @@
 
 ## 支持范围
 
-当前默认构建包含 85 个 Maven 模块、67 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
+当前默认构建包含 87 个 Maven 模块、69 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
 
 | artifactId | 用途 |
 | --- | --- |
@@ -293,3 +293,16 @@ try {
 ```
 
 [独立 Boot 2.7 消费验证](compatibility-tests/boot2-higress)使用安装后的扩展和本地 MCP HTTP 服务，检查初始化、自定义请求头与查询参数、工具搜索和 UTF-8 工具调用。真实 Higress 网关需要按部署环境验收。
+
+## AgentRun and Daytona on Java 8
+
+先按[从源码安装](#从源码安装)准备兼容版 Spring AI 和 AgentScope。在 Boot 2.7 应用导入兼容 BOM，显式引用 `agentscope-harness`，再按需选择后端。
+
+| artifactId | Harness 文件系统配置 | 所需配置 |
+| --- | --- | --- |
+| `agentscope-extensions-sandbox-agentrun` | `AgentRunFilesystemSpec` | API key、模板、MCP 地址，以及账号和区域或自定义数据面地址 |
+| `agentscope-extensions-sandbox-daytona` | `DaytonaFilesystemSpec` | API key、控制面和工具端点、快照或镜像 |
+
+这些依赖的 groupId 为 `cn.iocoder.agentscope`。将对应的 FilesystemSpec 传给 `HarnessAgent.builder().filesystem(...)`，并使用应用自己的凭据配置。
+
+[AgentRun Boot2 消费验证](compatibility-tests/boot2-agentrun)覆盖状态持久化/恢复和释放时的数据面认证请求；[Daytona Boot2 消费验证](compatibility-tests/boot2-daytona)覆盖创建、就绪、工作区初始化和释放。两项经本地 HTTP 服务验证；真实云环境按部署验收。
