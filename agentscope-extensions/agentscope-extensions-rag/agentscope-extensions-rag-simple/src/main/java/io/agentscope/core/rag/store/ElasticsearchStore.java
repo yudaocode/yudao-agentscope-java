@@ -32,8 +32,7 @@ import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
 import co.elastic.clients.elasticsearch.indices.ExistsRequest;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
-import co.elastic.clients.transport.rest5_client.Rest5ClientTransport;
-import co.elastic.clients.transport.rest5_client.low_level.Rest5Client;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.agentscope.core.message.ContentBlock;
@@ -48,13 +47,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.net.ssl.SSLContext;
-import org.apache.hc.client5.http.auth.AuthScope;
-import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
-import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
-import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
-import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
-import org.apache.hc.core5.http.HttpHost;
-import org.apache.hc.core5.ssl.SSLContextBuilder;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.elasticsearch.client.RestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
@@ -99,7 +98,7 @@ public class ElasticsearchStore implements VDBStoreBase, AutoCloseable {
 
     private final String indexName;
     private final int dimensions;
-    private final Rest5Client restClient;
+    private final RestClient restClient;
     private final ElasticsearchTransport transport;
     private final ElasticsearchClient client;
     private final boolean disableSslVerification;
@@ -116,8 +115,7 @@ public class ElasticsearchStore implements VDBStoreBase, AutoCloseable {
             if (builder.username != null && builder.password != null) {
                 credsProv.setCredentials(
                         new AuthScope(null, -1),
-                        new UsernamePasswordCredentials(
-                                builder.username, builder.password.toCharArray()));
+                        new UsernamePasswordCredentials(builder.username, builder.password));
             }
 
             final SSLContext sslContext;
@@ -133,30 +131,27 @@ public class ElasticsearchStore implements VDBStoreBase, AutoCloseable {
             HttpHost host = HttpHost.create(builder.url);
 
             this.restClient =
-                    Rest5Client.builder(host)
+                    RestClient.builder(host)
                             .setHttpClientConfigCallback(
                                     httpClientBuilder -> {
                                         if (builder.username != null) {
                                             httpClientBuilder.setDefaultCredentialsProvider(
                                                     credsProv);
                                         }
-                                    })
-                            .setConnectionManagerCallback(
-                                    connectionManager -> {
-                                        if (builder.url != null
-                                                && builder.url.startsWith("https")
+                                        if ("https".equalsIgnoreCase(host.getSchemeName())
                                                 && builder.disableSslVerification) {
-                                            connectionManager.setTlsStrategy(
-                                                    new DefaultClientTlsStrategy(
-                                                            sslContext,
-                                                            NoopHostnameVerifier.INSTANCE));
+                                            httpClientBuilder
+                                                    .setSSLContext(sslContext)
+                                                    .setSSLHostnameVerifier(
+                                                            NoopHostnameVerifier.INSTANCE);
                                         }
+                                        return httpClientBuilder;
                                     })
                             .build();
 
             // 2. Create Transport and Client
             this.transport =
-                    new Rest5ClientTransport(restClient, new JacksonJsonpMapper(OBJECT_MAPPER));
+                    new RestClientTransport(restClient, new JacksonJsonpMapper(OBJECT_MAPPER));
             this.client = new ElasticsearchClient(transport);
 
             // 3. Ensure Index Exists

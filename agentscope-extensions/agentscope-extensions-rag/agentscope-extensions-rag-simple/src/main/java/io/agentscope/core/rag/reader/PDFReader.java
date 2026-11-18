@@ -26,7 +26,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import reactor.core.publisher.Mono;
@@ -135,7 +134,7 @@ public class PDFReader extends AbstractChunkingReader {
             throw new ReaderException("PDF file does not exist: " + pdfPath);
         }
 
-        try (PDDocument document = Loader.loadPDF(new File(pdfPath))) {
+        try (PDDocument document = PDDocument.load(new File(pdfPath))) {
             PDFTextStripper stripper = new PDFTextStripper();
             StringBuilder fullText = new StringBuilder();
 

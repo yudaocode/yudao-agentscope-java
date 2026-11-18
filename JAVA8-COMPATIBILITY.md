@@ -6,7 +6,7 @@
 
 ## 支持范围
 
-当前默认构建包含 92 个 Maven 模块、74 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
+当前默认构建包含 93 个 Maven 模块、75 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
 
 | artifactId | 用途 |
 | --- | --- |
@@ -20,7 +20,7 @@
 `agentscope-java8-compat` 自动提供 core 与 runtime-sandbox 共用的基础辅助类；无需在应用中单独配置。其余模块是父 POM、聚合模块和 BOM。
 新增 OpenAI、Ollama、Anthropic、Gemini 四模型与对应 Boot2 starter。Anthropic SDK 需要 Kotlin1.9.24；继承 Boot2 parent 时设置 `<kotlin.version>1.9.24</kotlin.version>`，避免父 POM 压回旧 stdlib。
 
-Harness、AG-UI、JDBC、MySQL、PostgreSQL、Redis、MongoDB 已列入默认构建和 BOM；Durable、RAG-simple 等其余扩展及 `agentscope-all` 尚未纳入，源码保留。MongoDB 5.3.1 排除仅支持 Java 17 的可选原生 record codec，Java 8 使用 BSON/POJO codec。JSON schema 日期解析使用 Spring AI 的 ITU 兼容实现；Kubernetes 后端已完成 Java8 本地验证。Kubeconfig 解析与实际运行边界见下文。
+Harness、AG-UI、JDBC、MySQL、PostgreSQL、Redis、MongoDB 已列入默认构建和 BOM；其余尚未纳入的扩展与 `agentscope-all` 源码保留。MongoDB 5.3.1 排除仅支持 Java 17 的可选原生 record codec，Java 8 使用 BSON/POJO codec。JSON schema 日期解析使用 Spring AI 的 ITU 兼容实现；Kubernetes 后端已完成 Java8 本地验证。Kubeconfig 解析与实际运行边界见下文。
 独立沙箱模块的构建、配置与生命周期见 [Runtime sandbox 使用说明](agentscope-runtime-sandbox-core/README_zh.md)。
 
 ## 从源码安装
@@ -331,3 +331,20 @@ try {
 [Kubernetes Boot2 安装包测试](compatibility-tests/boot2-kubernetes)覆盖 Fabric8 6.14.0 的 Kubeconfig 解析和本地沙箱网关空响应体跳转。
 [Training Boot2 安装包测试](compatibility-tests/boot2-training)覆盖本地 Trinity HTTP 请求。
 实际 Kubernetes 集群与真实训练服务按部署环境验收。
+
+## RAG Simple on Java 8
+
+导入兼容版 `agentscope-bom` 并添加 `cn.iocoder.agentscope:agentscope-extensions-rag-simple`。
+可以用 `PDFReader` 或 `TikaReader` 读取 `ReaderInput.fromPath(path)`，再按业务选择向量库。
+Qdrant 保留 1.17.0，Milvus 保留 2.6.17。
+Java8 分支使用 Tika 2.9.4 与对应的 PDFBox 2.0.37，Elasticsearch Java/REST 客户端为 8.19.11。
+
+继承 `spring-boot-starter-parent` 2.7 且使用 Elasticsearch 时，应统一这两个版本：
+
+```xml
+<elasticsearch.version>8.19.11</elasticsearch.version>
+<jakarta-json.version>2.0.1</jakarta-json.version>
+```
+
+[独立 Boot2 消费验证](compatibility-tests/boot2-rag-simple)实际生成 PDF 并使用两种读取器，另经本地 HTTP 服务验证 Elasticsearch 连接和向量请求。
+真实外部向量库和模型端点按应用部署验收。
