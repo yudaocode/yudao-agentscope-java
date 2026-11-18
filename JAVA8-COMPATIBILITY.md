@@ -6,11 +6,12 @@
 
 ## 支持范围
 
-当前默认构建包含 69 个 Maven 模块、54 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
+当前默认构建包含 85 个 Maven 模块、67 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
 
 | artifactId | 用途 |
 | --- | --- |
 | `agentscope-core` | Agent、工具、消息、状态、MCP 与 HTTP/WebSocket 传输 |
+| `agentscope-extensions-higress` | Higress MCP 客户端与网关工具搜索 |
 | `agentscope-spring-boot-starter` | Boot 2.7 基础自动配置 |
 | `agentscope-extensions-model-dashscope` | DashScope 模型实现 |
 | `agentscope-dashscope-spring-boot-starter` | DashScope 模型自动配置 |
@@ -263,3 +264,32 @@ No E2B account is used by that fixture: it checks the installed jar, Boot2 conte
 The E2B component gate passed196 native8 executions, zero failures/errors,9 upstream live-cloud skips. The complete84-module serial clean install passed10920 executions on actual Java1.8.0_472, zero failures/errors,80 conditional skips. The fully disabled Docker sandbox class remains a skipped gap. An independent Boot2 parent consumer passed3 native8 cases with zero skips.
 
 Runtime scan including the standalone consumer:85 classpath files,413 jars,170535 effective base classes, none above Java8 major52. The static API report keeps111 reviewed third-party findings; its missing member/class signature set is unchanged from the82-module checkpoint. All sandbox backends and live E2B acceptance remain outside this result.
+
+## Higress MCP on Java 8
+
+Boot 2.7 项目导入本分支的 `agentscope-bom` 后，按需添加：
+
+```xml
+<dependency>
+    <groupId>cn.iocoder.agentscope</groupId>
+    <artifactId>agentscope-extensions-higress</artifactId>
+</dependency>
+```
+
+先按[从源码安装](#从源码安装)安装兼容版 Spring AI 与 AgentScope。使用自己的网关 MCP 地址和认证方式配置客户端。支持 `streamableHttpEndpoint`、`sseEndpoint` 和可选的 `toolSearch(query, topK)`。
+
+```java
+HigressMcpClientWrapper client = HigressMcpClientBuilder.create("higress")
+        .streamableHttpEndpoint(gatewayEndpoint)
+        .toolSearch("查询天气", 5)
+        .buildAsync()
+        .block(Duration.ofSeconds(10));
+try {
+    List<McpSchema.Tool> tools = client.listTools().block(Duration.ofSeconds(10));
+    // 从网关返回的工具中选择要调用的工具
+} finally {
+    client.close();
+}
+```
+
+[独立 Boot 2.7 消费验证](compatibility-tests/boot2-higress)使用安装后的扩展和本地 MCP HTTP 服务，检查初始化、自定义请求头与查询参数、工具搜索和 UTF-8 工具调用。真实 Higress 网关需要按部署环境验收。
