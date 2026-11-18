@@ -37,10 +37,12 @@ AgentRun 与 Daytona 沙箱后端已加入默认构建。87 模块在原生 JDK8
 
 新增 Studio、Admin starter 和 Agent Protocol。默认 90 模块在原生 JDK8 共 11,194 项，0 失败、0 错误、104 项条件跳过。组件测试分别通过 95、42、36 项，独立 Boot2 安装包消费分别通过 9、1、1 项。按需引用相应 artifactId，配置见 [Java8 接入说明](JAVA8-COMPATIBILITY.md#studio-admin-and-agent-protocol-on-java-8)。
 
+新增 Kubernetes 沙箱与 Training 扩展。92 模块原生 JDK8 通过 11,425 项，0 失败、0 错误、104 项条件跳过。Kubernetes 组件 65 项、独立 Boot2 消费 2 项，Training 分别为 166 和 9 项，分项均通过。用法见 [Java8 接入说明](JAVA8-COMPATIBILITY.md#kubernetes-and-training-on-java-8)。
+
 
 ## 如何使用
 
-当前默认构建包含 90 个 Maven 模块、72 个运行库：核心、Harness、AG-UI、独立 runtime-sandbox、DashScope/OpenAI/OpenAI 官方 Responses/Ollama/Anthropic/Gemini 及其 starter、AG-UI MVC/WebFlux starter、Chat Completions Web SDK 与 starter，以及 JDBC/MySQL/PostgreSQL/Redis/MongoDB 存储，OSS/COS 对象存储、Git/MySQL/PostgreSQL 技能仓库，以及 Mem0/百炼/ReMe Memory、百炼/Dify/Haystack/RAGFlow RAG 与 Quartz/XXL-Job 调度。已纳入真实 JDK 8 回归；其余扩展源码保留，未列入兼容 BOM。详细接入方式见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
+当前默认构建包含 92 个 Maven 模块、74 个运行库：核心、Harness、AG-UI、独立 runtime-sandbox、DashScope/OpenAI/OpenAI 官方 Responses/Ollama/Anthropic/Gemini 及其 starter、AG-UI MVC/WebFlux starter、Chat Completions Web SDK 与 starter，以及 JDBC/MySQL/PostgreSQL/Redis/MongoDB 存储，OSS/COS 对象存储、Git/MySQL/PostgreSQL 技能仓库，以及 Mem0/百炼/ReMe Memory、百炼/Dify/Haystack/RAGFlow RAG 与 Quartz/XXL-Job 调度。已纳入真实 JDK 8 回归；其余扩展源码保留，未列入兼容 BOM。详细接入方式见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
 
 Durable 按需引入 `agentscope-durable-runtime`、`agentscope-durable-worker` 或 `agentscope-extensions-durable-jdbc` / `-http` 等（同 groupId、由 BOM 管理）。`LocalBackend.open(Paths.get("./data/durable"))` 提供 SQLite 和不可变文件存储；业务保存并关闭返回的 `SessionBackend`。不要在 JDK8 业务源码中直接使用上游示例里的 `var`、`record` 或 `List.of`。完整原生 Boot2 示例见 [boot2-durable](compatibility-tests/boot2-durable)。对象存储的 MinIO/OSS SDK 为可选依赖，使用对应后端时需自行按 BOM 引入。
 

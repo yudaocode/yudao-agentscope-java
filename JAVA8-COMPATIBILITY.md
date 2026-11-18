@@ -6,7 +6,7 @@
 
 ## 支持范围
 
-当前默认构建包含 90 个 Maven 模块、72 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
+当前默认构建包含 92 个 Maven 模块、74 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
 
 | artifactId | 用途 |
 | --- | --- |
@@ -20,7 +20,7 @@
 `agentscope-java8-compat` 自动提供 core 与 runtime-sandbox 共用的基础辅助类；无需在应用中单独配置。其余模块是父 POM、聚合模块和 BOM。
 新增 OpenAI、Ollama、Anthropic、Gemini 四模型与对应 Boot2 starter。Anthropic SDK 需要 Kotlin1.9.24；继承 Boot2 parent 时设置 `<kotlin.version>1.9.24</kotlin.version>`，避免父 POM 压回旧 stdlib。
 
-Harness、AG-UI、JDBC、MySQL、PostgreSQL、Redis、MongoDB 已列入默认构建和 BOM；Durable、RAG-simple 等其余扩展及 `agentscope-all` 尚未纳入，源码保留。MongoDB 5.3.1 排除仅支持 Java 17 的可选原生 record codec，Java 8 使用 BSON/POJO codec。JSON schema 日期解析使用 Spring AI 的 ITU 兼容实现；可选 Kubernetes 后端尚未验收，其 SnakeYAML Engine 2.7 仍有新版 JDK API 引用，不属于 Java 8 已验证路径。
+Harness、AG-UI、JDBC、MySQL、PostgreSQL、Redis、MongoDB 已列入默认构建和 BOM；Durable、RAG-simple 等其余扩展及 `agentscope-all` 尚未纳入，源码保留。MongoDB 5.3.1 排除仅支持 Java 17 的可选原生 record codec，Java 8 使用 BSON/POJO codec。JSON schema 日期解析使用 Spring AI 的 ITU 兼容实现；Kubernetes 后端已完成 Java8 本地验证。Kubeconfig 解析与实际运行边界见下文。
 独立沙箱模块的构建、配置与生命周期见 [Runtime sandbox 使用说明](agentscope-runtime-sandbox-core/README_zh.md)。
 
 ## 从源码安装
@@ -318,3 +318,16 @@ try {
 | `agentscope-extensions-agent-protocol` | 在 Boot Servlet 宿主启用 `agentscope.agent-protocol.enabled=true`，提供 `AgentFactory` 或 `HarnessAgent`，按部署配置 `agentscope.agent-protocol.task-store-path`。 |
 
 独立 Boot2 消费分别见 [Studio](compatibility-tests/boot2-studio)、[Admin](compatibility-tests/boot2-agent-admin) 和 [Agent Protocol](compatibility-tests/boot2-agent-protocol)。Studio 使用本地 HTTP 服务验证注册、进程号和消息等请求；Admin 与 Agent Protocol 使用实际 Boot2 Servlet 宿主验证 HTTP 接口。
+
+## Kubernetes and Training on Java 8
+
+在 Boot 2.7 应用中导入兼容的 `agentscope-bom`，再按需选择下列模块。groupId 均为 `cn.iocoder.agentscope`。
+
+| artifactId | 应用接入 |
+| --- | --- |
+| `agentscope-extensions-sandbox-kubernetes` | 显式添加 `agentscope-harness`。通过 `KubernetesFilesystemSpec` 配置应用控制的 Kubernetes 环境，交给 `HarnessAgent.builder().filesystem(...)`。构建前安装含空响应体跳转修复的 Spring AI Java8 HTTP 兼容库。 |
+| `agentscope-extensions-training` | 使用扩展的 `TrainingConfig`、`TrainingRunner` 或 `TrinityClient`，按应用配置训练端点。 |
+
+[Kubernetes Boot2 安装包测试](compatibility-tests/boot2-kubernetes)覆盖 Fabric8 6.14.0 的 Kubeconfig 解析和本地沙箱网关空响应体跳转。
+[Training Boot2 安装包测试](compatibility-tests/boot2-training)覆盖本地 Trinity HTTP 请求。
+实际 Kubernetes 集群与真实训练服务按部署环境验收。
