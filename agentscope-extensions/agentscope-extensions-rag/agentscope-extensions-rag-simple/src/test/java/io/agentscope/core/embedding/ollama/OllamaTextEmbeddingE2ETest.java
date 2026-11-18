@@ -40,7 +40,8 @@ import reactor.test.StepVerifier;
 class OllamaTextEmbeddingE2ETest {
 
     private static final String MODEL_NAME = "nomic-embed-text:latest";
-    private static final String BASE_URL = "http://192.168.2.2:11434";
+    private static final String BASE_URL =
+            System.getProperty("ollama.test.base-url", "http://127.0.0.1:11434");
 
     private EmbeddingModel createModel() {
         return OllamaTextEmbedding.builder()
