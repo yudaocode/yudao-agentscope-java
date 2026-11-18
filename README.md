@@ -101,7 +101,7 @@ mvn -Djvm="$JAVA8_HOME/bin/java" clean install
 独立沙箱 SDK 通过 `cn.iocoder.agentscope:agentscope-runtime-sandbox-core` 按需引入，版本由 AgentScope BOM 管理。Boot 2 使用 `2.1.0-jdk8-SNAPSHOT`，Boot 3/4 共用 `2.1.0-SNAPSHOT`；不需要引入整个 AgentScope core。使用兼容 SandboxService 管理服务，或配置本机 Docker 与所需沙箱镜像。源码来源、构建、请求超时及资源关闭说明见 [Runtime sandbox 使用说明](agentscope-runtime-sandbox-core/README_zh.md)。外部平台与具体工具服务需按实际环境配置，不能将本地兼容测试理解为所有外部后端均已验收。
 
 下方逐字保留官方项目原始 README，其中的官方 Maven 坐标和发布状态仅针对上游项目；使用本兼容版时，以本节坐标、版本线和支持范围为准。
-A2A SDK `1.5.1.Final`、Nacos `3.3.0` 和聚合制品已纳入 Java 8 默认构建。102 模块在原生 JDK8 上共 12,537 项，0 失败、0 错误、139 项条件跳过。Boot 2 成品支持 AgentCard、JSON-RPC 和 SSE；Nacos 注册发现用独立 3.3.0 实例验证。按需添加 `agentscope-a2a-spring-boot-starter`、`agentscope-nacos-spring-boot-starter`，或用 `cn.iocoder.agentscope:agentscope` 聚合 Java API。坐标、依赖与配置见 [Java8 接入说明](JAVA8-COMPATIBILITY.md#a2anacos-与聚合包)。
+A2A SDK `1.5.1.Final`、Nacos `3.3.0` 和聚合制品已纳入 Java 8 默认构建。102 模块在原生 JDK8 上共 12,537 项，0 失败、0 错误、139 项条件跳过。Boot 2 成品支持 AgentCard、JSON-RPC 和 SSE；Nacos 注册发现用独立 3.3.0 实例验证。按需添加 `agentscope-a2a-spring-boot-starter`、`agentscope-nacos-spring-boot-starter`，或用 `cn.iocoder.agentscope:agentscope` 聚合 Java API。坐标、依赖与配置见 [Java8 接入说明](JAVA8-COMPATIBILITY.md#a2anacos-与聚合包)。 Java 8 客户端取消 AgentCard 读取时会同时关闭底层请求。
 
 <!-- YUDAO-COMPATIBILITY-INTRO-END -->
 

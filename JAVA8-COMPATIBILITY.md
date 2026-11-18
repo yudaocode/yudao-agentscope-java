@@ -364,7 +364,7 @@ Java8 分支使用 Tika 2.9.4 与对应的 PDFBox 2.0.37，Elasticsearch Java/RE
 | Boot 2 使用 Nacos 注册或发现 | 在上面的 Boot 2 依赖基础上添加 `agentscope-nacos-spring-boot-starter` |
 | Java API 聚合包 | `agentscope`，代替聚合包已包含的核心和扩展 JAR |
 
-A2A SDK 1.5.1.Final 的 Java 8 制品和 CDI API 回迁件由 Maven 自动解析。移除同一应用中原来的 `org.a2aproject.sdk` 制品，避免出现两份相同类。聚合包包含 A2A Client/Server 与 Nacos 扩展，Spring Boot starter 始终使用上表的独立制品。聚合包适合以 Java API 组装应用，Nacos Client 由聚合包传递引入，其他可选后端按各自接入说明补充外部 SDK。Boot 应用按需选用 starter 和对应模块。
+A2A SDK 1.5.1.Final 的 Java 8 制品和 CDI API 回迁件由 Maven 自动解析。 AgentCard 同步 GET 使用可取消的 Java 8 HTTP 客户端。调用方超时中断读取时，底层连接立即释放。移除同一应用中原来的 `org.a2aproject.sdk` 制品，避免出现两份相同类。聚合包包含 A2A Client/Server 与 Nacos 扩展，Spring Boot starter 始终使用上表的独立制品。聚合包适合以 Java API 组装应用，Nacos Client 由聚合包传递引入，其他可选后端按各自接入说明补充外部 SDK。Boot 应用按需选用 starter 和对应模块。
 
 Boot 2 应用提供 `ReActAgent`、`ReActAgent.Builder` 或 `AgentRunner`。AgentCard 通过 `/.well-known/agent-card.json` 获取。Java API 可用 `A2ACardResolver.builder().baseUrl(url).build().getAgentCard()` 完成发现。Boot 2 parent 会管理部分依赖版本，按本文的依赖属性示例保持 HTTP/Reactor 版本，并设置 `gson.version=2.15.0`。
 

@@ -17,7 +17,7 @@
  * <p>The module uses a ServiceLoader-based provider system allowing different HTTP client
  * implementations to be plugged in:
  * <ul>
- *   <li>{@link org.a2aproject.sdk.client.http.JdkA2AHttpClient} - Default implementation using JDK 11+ HttpClient (priority 0)</li>
+ *   <li>{@link org.a2aproject.sdk.client.http.Java8A2AHttpClient} - Default Java 8 implementation (priority 0)</li>
  *   <li>VertxA2AHttpClient - Vertx-based implementation when available (priority 100)</li>
  * </ul>
  *

@@ -8,10 +8,13 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -38,7 +41,7 @@ import org.springframework.ai.compat.jdkhttp.HttpResponse;
 
 /**
  * Java 8 HTTP transport adapted from the A2A SDK HttpURLConnection transport.
- * Streaming uses the cancellable Spring AI Java 8 HTTP client.
+ * Synchronous GET and streaming use the cancellable Spring AI Java 8 HTTP client.
  *
  * <p><b>Security Note:</b> This client does not follow HTTP redirects automatically
  * to prevent credential leakage to third-party origins. Explicitly enabled GET and POST redirects
@@ -60,7 +63,9 @@ public class Java8A2AHttpClient implements A2AHttpClient {
 
   private static final Duration STREAM_TIMEOUT = Duration.ofSeconds(60);
 
-  private static final class StreamingHttp {
+  private static final int MAX_RESPONSE_SIZE = 10 * 1024 * 1024; // 10 MB
+
+  private static final class CancellableHttp {
     private static final HttpClient CLIENT = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(15))
         .followRedirects(HttpClient.Redirect.NEVER)
@@ -189,13 +194,12 @@ public class Java8A2AHttpClient implements A2AHttpClient {
       if (is == null) {
         return "";
       }
-      int maxResponseSize = 10 * 1024 * 1024; // 10 MB
       try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
         StringBuilder sb = new StringBuilder();
         String line;
         boolean first = true;
         while ((line = reader.readLine()) != null) {
-          if (sb.length() + line.length() > maxResponseSize) {
+          if (sb.length() + line.length() > MAX_RESPONSE_SIZE) {
             throw new IOException("Response size exceeds limit");
           }
           if (!first) {
@@ -257,6 +261,17 @@ public class Java8A2AHttpClient implements A2AHttpClient {
     protected A2AHttpResponse execute(HttpURLConnection connection) throws IOException {
       int status = connection.getResponseCode();
       A2AHttpHeaders responseHeaders = fromConnectionHeaders(connection.getHeaderFields());
+      checkAuthorization(status, responseHeaders);
+      try (InputStream body =
+          (status >= HTTP_OK && status < HTTP_MULT_CHOICE)
+              ? connection.getInputStream()
+              : connection.getErrorStream()) {
+        return new Java8HttpResponse(status, readStreamWithLimit(body), responseHeaders);
+      }
+    }
+
+    protected static void checkAuthorization(int status, A2AHttpHeaders responseHeaders)
+        throws IOException {
       if (status == HTTP_UNAUTHORIZED) {
         throw new IOException(A2AErrorMessages.AUTHENTICATION_FAILED,
             new A2AClientHTTPError(HTTP_UNAUTHORIZED, A2AErrorMessages.AUTHENTICATION_FAILED,
@@ -266,16 +281,6 @@ public class Java8A2AHttpClient implements A2AHttpClient {
             new A2AClientHTTPError(HTTP_FORBIDDEN, A2AErrorMessages.AUTHORIZATION_FAILED,
                 null, responseHeaders.toMap()));
       }
-
-      String body = "";
-      try (InputStream is =
-          (status >= HTTP_OK && status < HTTP_MULT_CHOICE)
-              ? connection.getInputStream()
-              : connection.getErrorStream()) {
-        body = readStreamWithLimit(is);
-      }
-
-      return new Java8HttpResponse(status, body, responseHeaders);
     }
 
     private void processSSEResponse(
@@ -378,7 +383,7 @@ public class Java8A2AHttpClient implements A2AHttpClient {
           .apply(FlowAdapters.publisherToFlowPublisher(
               FlowAdapters.flowPublisherToFlux(publisher).timeout(STREAM_TIMEOUT)));
       CompletableFuture<HttpResponse<InputStream>> pending =
-          StreamingHttp.CLIENT.sendAsync(builder.build(), streamBody);
+          CancellableHttp.CLIENT.sendAsync(builder.build(), streamBody);
       result.whenComplete((ignored, failure) -> {
         if (result.isCancelled()) {
           pending.cancel(true);
@@ -436,7 +441,7 @@ public class Java8A2AHttpClient implements A2AHttpClient {
   private static class Java8GetBuilder extends Java8Builder<GetBuilder> implements GetBuilder {
     private boolean followRedirects = false;
 
-Java8GetBuilder(SSEParserConfig sseParserConfig, RedirectHeaderPolicy redirectHeaderPolicy) {
+    Java8GetBuilder(SSEParserConfig sseParserConfig, RedirectHeaderPolicy redirectHeaderPolicy) {
       super(sseParserConfig, redirectHeaderPolicy);
     }
 
@@ -447,32 +452,62 @@ Java8GetBuilder(SSEParserConfig sseParserConfig, RedirectHeaderPolicy redirectHe
     }
 
     @Override
-    public A2AHttpResponse get() throws IOException {
-      HttpURLConnection connection = createConnection("GET", false);
+    public A2AHttpResponse get() throws IOException, InterruptedException {
+      URI source;
       try {
-        A2AHttpResponse response = execute(connection);
-        if (!followRedirects) {
-          return response;
-        }
-        String location = response.headers().firstValue("Location");
-        RedirectHeaderPolicy.RedirectedRequest redirect = redirectHeaderPolicy
-            .redirectedRequest(URI.create(url), response.status(), location, headers)
-            .orElse(null);
-        if (redirect == null) {
-          return response;
-        }
-        if (!RedirectHeaderPolicy.sameOrigin(URI.create(url), redirect.target())) {
-          // HttpURLConnection cannot isolate process-wide CookieHandler or Authenticator state
-          // for an individual request. Never follow across an origin boundary.
-          return response;
-        }
-        connection.disconnect();
-        connection = createConnection(redirect.target().toString(), "GET", redirect.headers(), false);
-        return execute(connection);
-      } catch (IOException e) {
-        connection.disconnect();
-        throw e;
+        source = new URI(url);
+      } catch (URISyntaxException invalid) {
+        throw new MalformedURLException("Invalid URL: " + url);
       }
+      A2AHttpResponse response = executeGet(source, headers);
+      if (!followRedirects) {
+        return response;
+      }
+
+      String location = response.headers().firstValue("Location");
+      RedirectHeaderPolicy.RedirectedRequest redirect = redirectHeaderPolicy
+          .redirectedRequest(source, response.status(), location, headers)
+          .orElse(null);
+      if (redirect == null || !RedirectHeaderPolicy.sameOrigin(source, redirect.target())) {
+        return response;
+      }
+      return executeGet(redirect.target(), redirect.headers());
+    }
+
+    private A2AHttpResponse executeGet(URI target, Map<String, String> requestHeaders)
+        throws IOException, InterruptedException {
+      HttpRequest.Builder request;
+      try {
+        request = HttpRequest.newBuilder(target).timeout(STREAM_TIMEOUT).GET();
+        requestHeaders.forEach(request::header);
+      } catch (IllegalArgumentException invalid) {
+        throw new IOException("Invalid GET request", invalid);
+      }
+      // Keep the response future pending until the entire bounded body is received so
+      // interruption closes the connection even after the response headers arrive.
+      HttpResponse.BodyHandler<ByteArrayOutputStream> bodyHandler = publisher ->
+          FlowAdapters.flowPublisherToFlux(publisher).flatMapIterable(chunks -> chunks)
+              .collect(ByteArrayOutputStream::new, (out, buffer) -> {
+                if (buffer.remaining() > MAX_RESPONSE_SIZE - out.size()) {
+                  throw new UncheckedIOException(new IOException("Response size exceeds limit"));
+                }
+                byte[] chunk = new byte[buffer.remaining()];
+                buffer.get(chunk);
+                out.write(chunk, 0, chunk.length);
+              }).toFuture();
+      HttpResponse<ByteArrayOutputStream> response;
+      try {
+        response = CancellableHttp.CLIENT.send(request.build(), bodyHandler);
+      } catch (UncheckedIOException failure) {
+        throw failure.getCause();
+      }
+      int status = response.statusCode();
+      A2AHttpHeaders responseHeaders = A2AHttpHeaders.of(response.headers().map());
+      checkAuthorization(status, responseHeaders);
+      String body = status >= 300 && status < 400
+          ? ""
+          : readStreamWithLimit(new ByteArrayInputStream(response.body().toByteArray()));
+      return new Java8HttpResponse(status, body, responseHeaders);
     }
 
     @Override

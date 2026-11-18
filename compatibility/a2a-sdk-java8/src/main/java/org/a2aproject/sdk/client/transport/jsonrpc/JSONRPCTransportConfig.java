@@ -46,7 +46,7 @@ import org.jspecify.annotations.Nullable;
  * @see JSONRPCTransportConfigBuilder
  * @see JSONRPCTransport
  * @see A2AHttpClient
- * @see org.a2aproject.sdk.client.http.JdkA2AHttpClient
+ * @see org.a2aproject.sdk.client.http.Java8A2AHttpClient
  */
 public class JSONRPCTransportConfig extends ClientTransportConfig<JSONRPCTransport> {
 
