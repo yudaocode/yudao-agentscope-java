@@ -75,6 +75,7 @@
         <slf4j.version>1.7.36</slf4j.version>
         <logback.version>1.2.13</logback.version>
         <httpclient5.version>5.6.5</httpclient5.version>
+        <socket.io-client.version>2.1.2</socket.io-client.version>
         <opentelemetry-reactor.version>2.33.1-alpha</opentelemetry-reactor.version>
         <opentelemetry-semconv-incubating.version>1.41.0-alpha</opentelemetry-semconv-incubating.version>
         <jedis.version>7.4.1</jedis.version>
@@ -109,6 +110,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.socket</groupId>
+                <artifactId>socket.io-client</artifactId>
+                <version>${socket.io-client.version}</version>
+            </dependency>
             <dependency><groupId>io.minio</groupId><artifactId>minio</artifactId><version>${minio.version}</version></dependency>
             <dependency><groupId>org.testcontainers</groupId><artifactId>testcontainers-bom</artifactId><version>${testcontainers.version}</version><type>pom</type><scope>import</scope></dependency><dependency>
                 <groupId>org.jetbrains.kotlin</groupId>

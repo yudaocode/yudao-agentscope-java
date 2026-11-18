@@ -19,10 +19,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.message.TextBlock;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -88,7 +92,13 @@ class StudioClientTest {
         assertNotNull(request);
         assertEquals("/trpc/registerRun", request.getPath());
         assertEquals("POST", request.getMethod());
-        assertTrue(request.getBody().size() > 0, "Request body should not be empty");
+        JsonNode payload = new ObjectMapper().readTree(request.getBody().readUtf8());
+        assertEquals("test-run-123", payload.path("id").asText());
+        assertTrue(payload.path("pid").canConvertToLong());
+        String vmName = System.getProperty("java.vm.name");
+        if (vmName.contains("HotSpot") || vmName.contains("OpenJDK")) {
+            assertTrue(payload.path("pid").asLong() > 0);
+        }
     }
 
     @Test
@@ -179,7 +189,9 @@ class StudioClientTest {
         mockServer.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
         // Use a Map instead of Object for JSON serialization
-        Map<String, Object> schema = Map.of("type", "object", "properties", Map.of());
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("type", "object");
+        schema.put("properties", Collections.emptyMap());
 
         Mono<String> result = client.requestUserInput("agent-123", "TestAgent", schema);
 

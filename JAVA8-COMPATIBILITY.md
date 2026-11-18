@@ -6,7 +6,7 @@
 
 ## 支持范围
 
-当前默认构建包含 87 个 Maven 模块、69 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
+当前默认构建包含 90 个 Maven 模块、72 个运行库，主要入口如下；完整运行库由兼容 BOM 管理：
 
 | artifactId | 用途 |
 | --- | --- |
@@ -306,3 +306,15 @@ try {
 这些依赖的 groupId 为 `cn.iocoder.agentscope`。将对应的 FilesystemSpec 传给 `HarnessAgent.builder().filesystem(...)`，并使用应用自己的凭据配置。
 
 [AgentRun Boot2 消费验证](compatibility-tests/boot2-agentrun)覆盖状态持久化/恢复和释放时的数据面认证请求；[Daytona Boot2 消费验证](compatibility-tests/boot2-daytona)覆盖创建、就绪、工作区初始化和释放。两项经本地 HTTP 服务验证；真实云环境按部署验收。
+
+## Studio, Admin and Agent Protocol on Java 8
+
+导入兼容版 `agentscope-bom` 后，按需引用相应模块（groupId 均为 `cn.iocoder.agentscope`）：
+
+| 模块 | Boot 2.7 接入方式 |
+| --- | --- |
+| `agentscope-extensions-studio` | 另引 `agentscope-core`。通过 `StudioConfig.builder().studioUrl(...)` 配置 Studio，使用 `StudioClient` 注册和上报。 |
+| `agentscope-admin-spring-boot-starter` | 另引 `agentscope-harness` 及需要的 Boot Web/Actuator starter。设置 `agentscope.admin.enabled=true`。按需添加 `org.springdoc:springdoc-openapi-ui:1.8.0`，管理接口文档在 `/v3/api-docs/agentscope-admin`。 |
+| `agentscope-extensions-agent-protocol` | 在 Boot Servlet 宿主启用 `agentscope.agent-protocol.enabled=true`，提供 `AgentFactory` 或 `HarnessAgent`，按部署配置 `agentscope.agent-protocol.task-store-path`。 |
+
+独立 Boot2 消费分别见 [Studio](compatibility-tests/boot2-studio)、[Admin](compatibility-tests/boot2-agent-admin) 和 [Agent Protocol](compatibility-tests/boot2-agent-protocol)。Studio 使用本地 HTTP 服务验证注册、进程号和消息等请求；Admin 与 Agent Protocol 使用实际 Boot2 Servlet 宿主验证 HTTP 接口。

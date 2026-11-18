@@ -22,6 +22,7 @@ import io.agentscope.core.studio.pojo.RequestUserInputRequest;
 import io.agentscope.core.util.JsonCodec;
 import io.agentscope.core.util.JsonUtils;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -76,6 +77,20 @@ public class StudioClient {
                         .build();
     }
 
+    private static long currentProcessId() {
+        // HotSpot on Java 8 exposes the process id as the prefix of "pid@host".
+        String runtimeName = ManagementFactory.getRuntimeMXBean().getName();
+        int separator = runtimeName.indexOf('@');
+        if (separator > 0) {
+            try {
+                return Long.parseLong(runtimeName.substring(0, separator));
+            } catch (NumberFormatException ignored) {
+                // Keep the registration payload valid on JVMs using another name format.
+            }
+        }
+        return 0;
+    }
+
     /**
      * Registers a new run with Studio.
      *
@@ -96,7 +111,7 @@ public class StudioClient {
                                             .project(config.getProject())
                                             .name(config.getRunName())
                                             .timestamp(formatTimestamp(Instant.now()))
-                                            .pid(ProcessHandle.current().pid())
+                                            .pid(currentProcessId())
                                             .status("running")
                                             .runDir("")
                                             .build();

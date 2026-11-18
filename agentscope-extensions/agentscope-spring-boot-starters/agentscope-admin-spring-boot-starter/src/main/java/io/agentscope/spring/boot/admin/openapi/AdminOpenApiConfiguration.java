@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import org.springdoc.core.models.GroupedOpenApi;
+import org.springdoc.core.GroupedOpenApi;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -37,7 +37,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Wires the admin starter into springdoc-openapi <em>only when springdoc is on the classpath</em>.
  *
- * <p>Consumers opt in by adding {@code springdoc-openapi-starter-webmvc-ui} to their app pom (it
+ * <p>Consumers opt in by adding {@code springdoc-openapi-ui} to their app pom (it
  * is declared as {@code optional} here). When present:
  *
  * <ul>

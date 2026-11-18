@@ -16,8 +16,8 @@
 package io.agentscope.spring.boot.admin.command;
 
 import io.agentscope.spring.boot.admin.properties.AdminProperties;
-import jakarta.annotation.PostConstruct;
 import java.util.List;
+import javax.annotation.PostConstruct;
 
 /**
  * Registers the Phase-1 built-in {@link AdminCommand}s into the {@link AdminCommandRegistry}.

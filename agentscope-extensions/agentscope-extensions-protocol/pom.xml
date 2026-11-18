@@ -29,6 +29,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>agentscope-extensions-agent-protocol</module>
         <module>agentscope-extensions-agui</module>
         <module>agentscope-extensions-chat-completions-web</module></modules>
 

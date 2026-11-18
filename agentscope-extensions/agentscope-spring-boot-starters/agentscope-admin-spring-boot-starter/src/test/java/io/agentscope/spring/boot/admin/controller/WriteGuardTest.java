@@ -35,7 +35,7 @@ class WriteGuardTest {
                 .isInstanceOfSatisfying(
                         ResponseStatusException.class,
                         e -> {
-                            assert e.getStatusCode().value() == HttpStatus.FORBIDDEN.value();
+                            assert e.getStatus().value() == HttpStatus.FORBIDDEN.value();
                         });
     }
 
@@ -57,7 +57,7 @@ class WriteGuardTest {
                 .isInstanceOfSatisfying(
                         ResponseStatusException.class,
                         e -> {
-                            assert e.getStatusCode().value() == HttpStatus.UNAUTHORIZED.value();
+                            assert e.getStatus().value() == HttpStatus.UNAUTHORIZED.value();
                         });
     }
 

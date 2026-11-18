@@ -34,6 +34,7 @@
     </properties>
 
     <modules>
+        <module>agentscope-admin-spring-boot-starter</module>
         <module>agentscope-spring-boot-starter</module>
         <module>agentscope-dashscope-spring-boot-starter</module>
         <module>agentscope-openai-spring-boot-starter</module>
