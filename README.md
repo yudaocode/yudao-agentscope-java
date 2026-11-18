@@ -1,6 +1,6 @@
 <!-- YUDAO-COMPATIBILITY-INTRO-BEGIN -->
 
-> 版本命名：保留当前源码基线的官方版本号；共用现代制品不加 JDK 后缀，隔离维护的兼容路线添加 `jdk8` / `jdk17` / `jdk25`。SNAPSHOT 尚未发布 Maven Central。JDK 路线后缀不等于最低字节码版本，框架依赖仍按 Boot 版本选择。
+> 版本命名：保留当前源码基线的官方版本号；共用现代制品不加 JDK 后缀，隔离维护的兼容路线添加 `jdk8` / `jdk17` / `jdk25`。开发版本使用 SNAPSHOT。JDK 路线后缀不等于最低字节码版本，框架依赖仍按 Boot 版本选择。
 > 完整版本规则与预览命名见 [VERSIONING.md](VERSIONING.md)。
 
 # yudao-agentscope-java
@@ -14,16 +14,16 @@ yudao-agentscope-java 是 [AgentScope Java](https://github.com/agentscope-ai/age
 | Gitee | [yudao-agentscope-java](https://gitee.com/yudaocode/yudao-agentscope-java) |
 | GitHub | [yudao-agentscope-java](https://github.com/yudaocode/yudao-agentscope-java) |
 
-| 分支 | 目标环境 | 源码开发版本 | 发布规则 | 状态 |
+| 分支 | 目标环境 | 源码开发版本 | Maven Central | 状态 |
 | --- | --- | --- | --- | --- |
-| [`main`](https://github.com/yudaocode/yudao-agentscope-java/tree/main) | Boot 3.x / 4.x，JDK 17 / 25 | `2.1.0-SNAPSHOT` | 官方版本 + 日期 | 核心和基础 starter 已完成同 jar 四组合验证，其他扩展验收中 |
-| [`main-jdk8`](https://github.com/yudaocode/yudao-agentscope-java/tree/main-jdk8) | Boot 2.x，JDK 8 | `2.1.0-jdk8-SNAPSHOT` | 官方版本 + 路线 + 日期 | 核心、基础与 DashScope starter 已通过 Boot 2.7/JDK 8 验证，其他扩展移植中 |
+| [`main`](https://github.com/yudaocode/yudao-agentscope-java/tree/main) | Boot 3.x / 4.x，JDK 17 / 25 | `2.1.0-SNAPSHOT` | [2.1.0-preview-20261119](https://central.sonatype.com/artifact/cn.iocoder.agentscope/agentscope-bom/2.1.0-preview-20261119) | 核心和基础 starter 已完成同 jar 四组合验证，其他扩展验收中 |
+| [`main-jdk8`](https://github.com/yudaocode/yudao-agentscope-java/tree/main-jdk8) | Boot 2.x，JDK 8 | `2.1.0-jdk8-SNAPSHOT` | [2.1.0-jdk8-preview-20261119](https://central.sonatype.com/artifact/cn.iocoder.agentscope/agentscope-bom/2.1.0-jdk8-preview-20261119) | 核心、基础与 DashScope starter 已通过 Boot 2.7/JDK 8 验证，其他扩展移植中 |
 
 AgentScope 的现代制品由 Boot 3/4 共用，版本不带 JDK 后缀。当前分支：**`main-jdk8`**。
 
 Maven groupId 为 **`cn.iocoder.agentscope`**，artifactId 和 Java 包名沿用官方。同一个应用只选择一条版本线，同一项目的模块使用同一版本；替换已有依赖时，也要移除对应官方 groupId 下的同类模块，避免重复类。
 
-**当前仅提供源码开发版，尚未发布这些坐标到 Maven Central 或远端 SNAPSHOT 仓库。** 下面的 SNAPSHOT 示例须先从源码安装到本地仓库。发布版本按 `官方版本[-jdk数字][-preview]-YYYYMMDD` 命名；共用制品省略 JDK，未发布上游基线增加 preview，无同日序号。
+Boot 2 / JDK 8 兼容版 [2.1.0-jdk8-preview-20261119](https://central.sonatype.com/artifact/cn.iocoder.agentscope/agentscope-bom/2.1.0-jdk8-preview-20261119) 已发布到 Maven Central。下面的 Maven 示例直接使用发布坐标。 本次包含基础 starter 和独立沙箱 SDK。Durable 开发模块和示例单独维护。发布版本按 `官方版本[-jdk数字][-preview]-YYYYMMDD` 命名；共用制品省略 JDK，未发布上游基线增加 preview，无同日序号。
 
 2026-11-17 前一检查点 **69 模块完整串行 `clean install`** 已在原生 JDK8 上跑完：10,358 项，失败/错误均为 0，条件跳过 71 项。此前分批门禁继续保留；本次提供全默认范围的一次完整检查点，不包含仍被排除的可选扩展和真实平台账号验收。
 
@@ -44,13 +44,13 @@ RAG Simple 已加入默认构建。93 模块原生 JDK8 共 11,912 项，0 失�
 
 ## 如何使用
 
-当前默认构建包含 93 个 Maven 模块、75 个运行库：核心、Harness、AG-UI、独立 runtime-sandbox、DashScope/OpenAI/OpenAI 官方 Responses/Ollama/Anthropic/Gemini 及其 starter、AG-UI MVC/WebFlux starter、Chat Completions Web SDK 与 starter，以及 JDBC/MySQL/PostgreSQL/Redis/MongoDB 存储，OSS/COS 对象存储、Git/MySQL/PostgreSQL 技能仓库，以及 Mem0/百炼/ReMe Memory、百炼/Dify/Haystack/RAGFlow RAG 与 Quartz/XXL-Job 调度。已纳入真实 JDK 8 回归；其余扩展源码保留，未列入兼容 BOM。详细接入方式见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
+此前 93 模块源码检查点覆盖 75 个运行库：核心、Harness、AG-UI、独立 runtime-sandbox、DashScope/OpenAI/OpenAI 官方 Responses/Ollama/Anthropic/Gemini 及其 starter、AG-UI MVC/WebFlux starter、Chat Completions Web SDK 与 starter，以及 JDBC/MySQL/PostgreSQL/Redis/MongoDB 存储，OSS/COS 对象存储、Git/MySQL/PostgreSQL 技能仓库，以及 Mem0/百炼/ReMe Memory、百炼/Dify/Haystack/RAGFlow RAG 与 Quartz/XXL-Job 调度。已纳入真实 JDK 8 回归；其余扩展源码保留，未列入兼容 BOM。详细接入方式见 [Java 8 使用说明](JAVA8-COMPATIBILITY.md)。
 
-Durable 按需引入 `agentscope-durable-runtime`、`agentscope-durable-worker` 或 `agentscope-extensions-durable-jdbc` / `-http` 等（同 groupId、由 BOM 管理）。`LocalBackend.open(Paths.get("./data/durable"))` 提供 SQLite 和不可变文件存储；业务保存并关闭返回的 `SessionBackend`。不要在 JDK8 业务源码中直接使用上游示例里的 `var`、`record` 或 `List.of`。完整原生 Boot2 示例见 [boot2-durable](compatibility-tests/boot2-durable)。对象存储的 MinIO/OSS SDK 为可选依赖，使用对应后端时需自行按 BOM 引入。
+使用本地构建的 SNAPSHOT 时，Durable 可按需引入 `agentscope-durable-runtime`、`agentscope-durable-worker` 或 `agentscope-extensions-durable-jdbc` / `-http` 等（同 groupId、由 BOM 管理）。`LocalBackend.open(Paths.get("./data/durable"))` 提供 SQLite 和不可变文件存储；业务保存并关闭返回的 `SessionBackend`。不要在 JDK8 业务源码中直接使用上游示例里的 `var`、`record` 或 `List.of`。完整原生 Boot2 示例见 [boot2-durable](compatibility-tests/boot2-durable)。对象存储的 MinIO/OSS SDK 为可选依赖，使用对应后端时需自行按 BOM 引入。
 
 ```xml
 <properties>
-    <yudao-agentscope.version>2.1.0-jdk8-SNAPSHOT</yudao-agentscope.version>
+    <yudao-agentscope.version>2.1.0-jdk8-preview-20261119</yudao-agentscope.version>
     <!-- 继承 Boot 2.7 parent 时，覆盖其旧版 HTTP 组件管理 -->
     <httpclient5.version>5.6.5</httpclient5.version>
     <httpcore5.version>5.4.4</httpcore5.version>
