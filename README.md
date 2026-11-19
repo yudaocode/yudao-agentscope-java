@@ -58,6 +58,8 @@ Boot 2.7/JDK 8 分支的支持模块、构建与 HTTP 依赖配置见 [Java 8 �
 
 独立沙箱 SDK 通过 `cn.iocoder.agentscope:agentscope-runtime-sandbox-core` 按需引入，版本由 AgentScope BOM 管理。Boot 2 使用 `2.1.0-jdk8-SNAPSHOT`，Boot 3/4 共用 `2.1.0-preview-20261119`；不需要引入整个 AgentScope core。使用兼容 SandboxService 管理服务，或配置本机 Docker 与所需沙箱镜像。源码来源、构建、请求超时及资源关闭说明见 [Runtime sandbox 使用说明](agentscope-runtime-sandbox-core/README_zh.md)。外部平台与具体工具服务需按实际环境配置，不能将本地兼容测试理解为所有外部后端均已验收。
 
+共用 `main` 的 `agentscope-extensions-jdbc` 已在 JDK 17 和 25 分别通过 MySQL 8.0 与 PostgreSQL 16 的 16 项 Docker 集成测试，均零跳过。可通过 `mvn -pl :agentscope-extensions-jdbc -am -Pintegration -Dtest=MysqlIntegrationTest,PostgresIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test` 复验。
+
 ### 从源码构建开发版
 
 需要调试源码时，在 JDK 17 下安装开发版：
