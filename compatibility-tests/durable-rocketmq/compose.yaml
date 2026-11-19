@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: durable
+      POSTGRES_PASSWORD: local_fixture
+      POSTGRES_DB: durable
+    ports:
+      - "127.0.0.1::5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "durable", "-d", "durable", "-h", "127.0.0.1"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  nameserver:
+    image: apache/rocketmq:5.3.2
+    command: ["sh", "mqnamesrv"]
+    environment:
+      HEAP_OPTS: "-Xms96m -Xmx192m -Xmn64m"
+
+  broker:
+    image: apache/rocketmq:5.3.2
+    command: ["sh", "mqbroker", "-n", "nameserver:9876", "-c", "/tmp/durable-broker.conf"]
+    environment:
+      HEAP_OPTS: "-Xms256m -Xmx384m -Xmn128m -XX:MaxDirectMemorySize=512m -Dio.netty.allocator.numDirectArenas=4"
+    depends_on:
+      - nameserver
+    volumes:
+      - "./broker.conf:/tmp/durable-broker.conf:ro"
+    tmpfs:
+      - "/home/rocketmq/store:rw,size=384m,uid=3000,gid=3000,mode=0750"
+    healthcheck:
+      test: ["CMD-SHELL", "sh mqadmin clusterList -n nameserver:9876 | grep -q compat-broker"]
+      interval: 3s
+      timeout: 8s
+      retries: 20
+
+  proxy:
+    image: apache/rocketmq:5.3.2
+    command: ["sh", "mqproxy", "-n", "nameserver:9876", "-pc", "/tmp/durable-proxy.json"]
+    environment:
+      HEAP_OPTS: "-Xms128m -Xmx256m -Xmn64m"
+      NAMESRV_ADDR: "nameserver:9876"
+    depends_on:
+      broker:
+        condition: service_healthy
+    volumes:
+      - "./proxy.json:/tmp/durable-proxy.json:ro"
+    ports:
+      - "127.0.0.1::18081"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'true >/dev/tcp/127.0.0.1/18081'"]
+      interval: 2s
+      timeout: 3s
+      retries: 30

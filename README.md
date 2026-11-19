@@ -111,6 +111,8 @@ A2A SDK `1.5.1.Final`、Nacos `3.3.0` 和聚合制品已纳入 Java 8 默认构�
 测试覆盖会话状态、KV 原子更新、快照、并发锁、旧表结构校验和技能仓库。
 在源码根目录使用 `-Pintegration` 可启用这组集成用例。
 
+Spring Boot 2.7.18 / JDK 8 的 [Durable RocketMQ 集成测试](compatibility-tests/durable-rocketmq)通过 2 项。测试使用 Docker RocketMQ 5.3.2 与 PostgreSQL 17，覆盖正常投递和独立 worker JVM 在写入工具副作用后被强杀的场景。接替 worker 用原 execution ID 恢复，工具只执行一次，Brain 只应用一次结果。
+
 <!-- YUDAO-COMPATIBILITY-INTRO-END -->
 
 ---
