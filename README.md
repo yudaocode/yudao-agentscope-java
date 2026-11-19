@@ -83,7 +83,7 @@ RAG Simple 已加入默认构建。93 模块原生 JDK8 共 11,912 项，0 失�
 
 XXL-Job 扩展按需引入 `agentscope-extensions-scheduler-xxl-job`，默认使用已核验 Java8 字节码的 XXL-Job `2.5.0`；应用自行启动并传入 `XxlJobExecutor`。继承 Boot2 parent 时，还需设置 `<xxl-job.version>2.5.0</xxl-job.version>` 以统一直接管理的版本。客户端注册/任务执行与 Groovy 运行测试在真实 JDK8 上共 36 项通过；远程调度中心未验收。
 
-Nacos Prompt/Skill 扩展按需引入 `agentscope-extensions-nacos-prompt`、`agentscope-extensions-nacos-skill`，同 groupId、版本由 BOM 管理。保留上游 Nacos Client `3.3.0`；应用提供 `com.alibaba.nacos.api.ai.AiService`，分别创建 `NacosPromptListener(aiService)`、`NacosSkillRepository(aiService, namespaceId)`。Prompt/Skill 原有 79 项测试在真实 JDK8 上通过；Nacos A2A 与 Nacos starter 尚未纳入本分支，远程 Nacos 服务需单独验收。
+Nacos Prompt/Skill 扩展按需引入 `agentscope-extensions-nacos-prompt`、`agentscope-extensions-nacos-skill`，同 groupId、版本由 BOM 管理。保留上游 Nacos Client `3.3.0`；应用提供 `com.alibaba.nacos.api.ai.AiService`，分别创建 `NacosPromptListener(aiService)`、`NacosSkillRepository(aiService, namespaceId)`。Prompt/Skill 原有 79 项测试在真实 JDK8 上通过；Nacos A2A 与 Nacos starter 已纳入本分支，注册发现通过独立 Nacos 3.3.0 实例验证。
 
 Jev、OpenAI Decisions 评判扩展及两个 starter 也已纳入兼容 BOM：`agentscope-extensions-jev` / `agentscope-jev-spring-boot-starter`、`agentscope-extensions-openai-decisions` / `agentscope-openai-decisions-spring-boot-starter`。按需引入一套库或 starter；配置前缀分别为 `agentscope.jev`、`agentscope.openai-decisions`，API key 使用对应 `api-key` 属性，使用自己的服务时设置 `base-url`。可注入 `JevClient` / `OpenAIDecisionsClient`；未使用时不添加依赖，或设置对应 `enabled=false`。本批两个库与两个 starter 共 241 项 JDK8 测试通过（含本地真实 Chrome DOM 回归），远端付费评判服务未验收。
 
@@ -102,6 +102,8 @@ mvn -Djvm="$JAVA8_HOME/bin/java" clean install
 
 下方逐字保留官方项目原始 README，其中的官方 Maven 坐标和发布状态仅针对上游项目；使用本兼容版时，以本节坐标、版本线和支持范围为准。
 A2A SDK `1.5.1.Final`、Nacos `3.3.0` 和聚合制品已纳入 Java 8 默认构建。102 模块在原生 JDK8 上共 12,537 项，0 失败、0 错误、139 项条件跳过。Boot 2 成品支持 AgentCard、JSON-RPC 和 SSE；Nacos 注册发现用独立 3.3.0 实例验证。按需添加 `agentscope-a2a-spring-boot-starter`、`agentscope-nacos-spring-boot-starter`，或用 `cn.iocoder.agentscope:agentscope` 聚合 Java API。坐标、依赖与配置见 [Java8 接入说明](JAVA8-COMPATIBILITY.md#a2anacos-与聚合包)。 Java 8 客户端取消 AgentCard 读取时会同时关闭底层请求。
+
+补充验收覆盖原生 JDK 8 的真实 Redis 会话存储。Windows Server 2022 / JDK 8 通过 6 项用例，覆盖命令参数、隐藏文件和 SQLite 本地事务存储。[Windows CI 记录](https://github.com/yudaocode/yudao-agentscope-java/actions/runs/44433228206)
 
 <!-- YUDAO-COMPATIBILITY-INTRO-END -->
 
