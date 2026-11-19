@@ -75,6 +75,8 @@ mvn -pl agentscope-dependencies-bom,agentscope-distribution/agentscope-bom,agent
 ```
 
 下方逐字保留官方项目原始 README，其中的官方 Maven 坐标和发布状态仅针对上游项目；使用本兼容版时，以本节坐标、版本线和支持范围为准。
+Durable 的本地 JDBC 与 HTTP 后端已用同一套本地安装 JAR 验证。Spring Boot 3.5.15 和 4.1.2 分别在 JDK 17、25 上各通过 2 项测试，覆盖 SQLite 会话与不可变文件跨 Spring 上下文重启，以及 loopback HTTP 写入与读取。
+
 <!-- YUDAO-COMPATIBILITY-INTRO-END -->
 
 ---
