@@ -79,6 +79,8 @@ Durable 的本地 JDBC 与 HTTP 后端已用同一套本地安装 JAR 验证。S
 
 Spring Boot 3.5.15、4.1.2 分别在 JDK 17、25 通过 [Durable RocketMQ 集成测试](compatibility-tests/durable-rocketmq)，每组 2 项。测试使用 Docker RocketMQ 5.3.2 与 PostgreSQL 17，覆盖正常投递和独立 worker JVM 在写入工具副作用后被强杀的场景。接替 worker 用原 execution ID 恢复，工具只执行一次，Brain 只应用一次结果。
 
+Spring Boot 3.5.15、4.1.2 各在 JDK 17、25 连接 Docker MinIO，每组通过 [Durable S3 对象存储集成测试](compatibility-tests/durable-minio)两项。用例覆盖同一对象重复写入、更换客户端后读回，以及检测损坏并拒绝覆盖。
+
 <!-- YUDAO-COMPATIBILITY-INTRO-END -->
 
 ---
