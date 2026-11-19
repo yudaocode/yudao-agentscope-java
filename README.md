@@ -62,6 +62,8 @@ Boot 2.7/JDK 8 分支的支持模块、构建与 HTTP 依赖配置见 [Java 8 �
 
 共用 `main` 的持久化扩展也已在 JDK 17.0.21 和 25.0.3 各通过 24 项 Docker 测试。MongoDB 7 的索引生命周期、状态版本与存储契约共 22 项，Redis 7 Cluster 的多节点会话枚举与 CAS 共 2 项，均零跳过。这些是扩展模块的直接测试，Boot 3/4 基础 starter 的启动范围见上表。
 
+`agentscope-extensions-rag-simple` 在 JDK 25.0.3 连接 ARM64 Docker 中的 Ollama 0.40.9，使用 `nomic-embed-text` 通过 7 项向量端点测试，零跳过。
+
 ### 从源码构建开发版
 
 需要调试源码时，在 JDK 17 下安装开发版：
