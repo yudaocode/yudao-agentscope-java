@@ -105,6 +105,12 @@ A2A SDK `1.5.1.Final`、Nacos `3.3.0` 和聚合制品已纳入 Java 8 默认构�
 
 补充验收覆盖原生 JDK 8 的真实 Redis 会话存储。Windows Server 2022 / JDK 8 通过 6 项用例，覆盖命令参数、隐藏文件和 SQLite 本地事务存储。[Windows CI 记录](https://github.com/yudaocode/yudao-agentscope-java/actions/runs/44433228206)
 
+## JDBC 持久化验收
+
+`agentscope-extensions-jdbc` 已用 Docker 在原生 JDK 8 上验证 MySQL 8.0 和 PostgreSQL 16，各通过 8 项，零失败、零跳过。
+测试覆盖会话状态、KV 原子更新、快照、并发锁、旧表结构校验和技能仓库。
+在源码根目录使用 `-Pintegration` 可启用这组集成用例。
+
 <!-- YUDAO-COMPATIBILITY-INTRO-END -->
 
 ---
