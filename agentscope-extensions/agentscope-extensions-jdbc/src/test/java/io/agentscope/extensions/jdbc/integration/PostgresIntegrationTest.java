@@ -25,6 +25,7 @@ import io.agentscope.core.skill.AgentSkill;
 import io.agentscope.core.state.State;
 import io.agentscope.extensions.jdbc.JdbcDistributedStore;
 import io.agentscope.extensions.jdbc.dialect.AbstractJdbcDialect;
+import io.agentscope.extensions.jdbc.dialect.AbstractJdbcDialectBuilder;
 import io.agentscope.extensions.jdbc.skill.JdbcAgentSkillRepository;
 import io.agentscope.harness.agent.IsolationScope;
 import io.agentscope.harness.agent.filesystem.remote.store.StoreItem;
@@ -62,7 +63,7 @@ class PostgresIntegrationTest {
 
     @Container
     static final PostgreSQLContainer<?> postgres =
-            new PostgreSQLContainer<>("postgres:16").withDatabaseName("agentscope");
+            new PostgreSQLContainer<>("postgres:16-alpine").withDatabaseName("agentscope");
 
     record TestState(String value) implements State {}
 
@@ -128,20 +129,20 @@ class PostgresIntegrationTest {
     @DisplayName("06: build() blocks when a legacy table lacks the version column")
     void buildBlocksOnLegacyTableMissingColumn() throws Exception {
         DataSource ds = createDataSource();
-        // Current schema first, then regress the sessions table to the legacy shape the
-        // deprecated postgresql extension created (same table name, no version column).
-        AbstractJdbcDialect.from(ds).build();
+        // Keep the legacy schema separate from the table used by the other tests.
+        String legacyTable = "agentscope_legacy_sessions";
+        AbstractJdbcDialectBuilder builder =
+                AbstractJdbcDialect.from(ds).sessionStateTableName(legacyTable);
+        builder.build();
         try (Connection conn = ds.getConnection();
                 Statement stmt = conn.createStatement()) {
-            stmt.execute("ALTER TABLE agentscope_sessions DROP COLUMN version");
+            stmt.execute("ALTER TABLE " + legacyTable + " DROP COLUMN version");
         }
 
-        IllegalStateException exception =
-                assertThrows(
-                        IllegalStateException.class, () -> AbstractJdbcDialect.from(ds).build());
+        IllegalStateException exception = assertThrows(IllegalStateException.class, builder::build);
 
         assertTrue(exception.getMessage().contains("version"), exception.getMessage());
-        assertTrue(exception.getMessage().contains("agentscope_sessions"), exception.getMessage());
+        assertTrue(exception.getMessage().contains(legacyTable), exception.getMessage());
     }
 
     @Test
