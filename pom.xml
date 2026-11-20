@@ -1,19 +1,5 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<!--
-  ~ Copyright 2024-2026 the original author or authors.
-  ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~     http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
---><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version='1.0' encoding='utf-8'?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>cn.iocoder.agentscope</groupId>
@@ -23,7 +9,7 @@
     <name>AgentScope Java - Parent</name>
 
     <properties>
-        <revision>2.1.0-jdk8-SNAPSHOT</revision>
+        <revision>2.1.0-jdk8-preview-20261120</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>8</java.version>
@@ -65,14 +51,6 @@
     </modules>
 
     <description>AgentScope Java: Agent-Oriented Programming for Building LLM Applications</description>
-    <url>https://github.com/agentscope-ai/agentscope-java</url>
-
-    <scm>
-        <connection>git@github.com:agentscope-ai/agentscope-java.git</connection>
-        <developerConnection>git@github.com:agentscope-ai/agentscope-java.git</developerConnection>
-        <url>https://github.com/agentscope-ai/agentscope-java</url>
-    </scm>
-
     <organization>
         <name>Alibaba</name>
         <url>https://agentscope.io</url>
@@ -240,7 +218,7 @@
 								<argument>--source</argument>
 								<argument>17</argument>
 								<argument>-cp</argument>
-								<classpath/>
+								<classpath />
 								<argument>${maven.multiModuleProjectDirectory}/compatibility/java8/Java8SourceGenerator.java</argument>
 								<argument>${project.basedir}/src/main/java</argument>
 								<argument>${project.build.directory}/generated-sources/java8</argument>
@@ -259,7 +237,7 @@
 								<argument>--source</argument>
 								<argument>17</argument>
 								<argument>-cp</argument>
-								<classpath/>
+								<classpath />
 								<argument>${maven.multiModuleProjectDirectory}/compatibility/java8/Java8SourceGenerator.java</argument>
 								<argument>${project.basedir}/src/test/java</argument>
 								<argument>${project.build.directory}/generated-test-sources/java8</argument>
@@ -294,8 +272,8 @@
                                 <include>.gitignore</include>
                             </includes>
                             <!-- define the steps to apply to those files -->
-                            <trimTrailingWhitespace/>
-                            <endWithNewline/>
+                            <trimTrailingWhitespace />
+                            <endWithNewline />
                             <indent>
                                 <tabs>true</tabs>
                                 <spacesPerTab>4</spacesPerTab>
@@ -309,10 +287,10 @@
                             <include>src/test/java/**/*.java</include>
                             <include>compatibility/java8/*.java</include>
                         </includes>
-                        <removeUnusedImports/>
-                        <forbidWildcardImports/>
-                        <formatAnnotations/>
-                        <importOrder/>
+                        <removeUnusedImports />
+                        <forbidWildcardImports />
+                        <formatAnnotations />
+                        <importOrder />
                         <!-- apply a specific flavor of google-java-format and reflow long strings -->
                         <googleJavaFormat>
                             <version>${google-java-format.version}</version>
@@ -508,4 +486,4 @@
             </build>
         </profile>
     </profiles>
-</project>
+<url>https://github.com/yudaocode/yudao-agentscope-java/tree/v2.1.0-jdk8-preview-20261120</url><scm><connection>scm:git:https://github.com/yudaocode/yudao-agentscope-java.git</connection><developerConnection>scm:git:ssh://git@github.com/yudaocode/yudao-agentscope-java.git</developerConnection><url>https://github.com/yudaocode/yudao-agentscope-java/tree/v2.1.0-jdk8-preview-20261120</url><tag>v2.1.0-jdk8-preview-20261120</tag></scm></project>
