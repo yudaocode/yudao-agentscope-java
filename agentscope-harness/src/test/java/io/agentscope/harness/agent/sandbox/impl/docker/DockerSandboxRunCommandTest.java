@@ -121,10 +121,10 @@ class DockerSandboxRunCommandTest {
                         "exec",
                         "-i",
                         "container-1",
-                        "tar",
-                        "-xpf",
-                        "-",
-                        "-C",
+                        "sh",
+                        "-c",
+                        "umask 000; exec tar -xpf - -C \"$1\"",
+                        "workspace-tar",
                         "/workspace"),
                 sandbox.buildHydrateCommand());
     }
