@@ -10,3 +10,5 @@
 上游提交 `21be74a8a`，兼容分支源码 `22cffb604`。
 
 公开制品沿用上一版范围。开发中的 Durable 模块继续从源码安装。
+
+Java 8 的 Spring AI JSON、HTTP 与 MCP 兼容依赖使用 Central 已有的 `2.1.0-jdk8-preview-20261119`。
