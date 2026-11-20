@@ -63,7 +63,7 @@ import org.slf4j.LoggerFactory;
  * <ul>
  *   <li>Exec: {@code docker exec -w <root> <containerId> sh -c <command>}</li>
  *   <li>PersistWorkspace: {@code docker exec <containerId> tar -cf - -C <root> .}</li>
- *   <li>HydrateWorkspace: {@code docker exec -i <containerId> tar -xpf - -C <root>}</li>
+ *   <li>HydrateWorkspace: {@code docker exec -i <containerId> sh -c 'umask 000; exec tar -xpf - -C "$1"' workspace-tar <root>}</li>
  *   <li>UploadFile / DownloadFile ({@link SandboxFileTransfer}): a host temp file round-tripped
  *       through {@code docker cp}, so file bytes never pass through exec argv or the stdout
  *       capture cap. Scoped to the workspace subtree by lexical validation; uploads land with
@@ -323,16 +323,16 @@ public class DockerSandbox extends AbstractBaseSandbox implements SandboxFileTra
     }
 
     List<String> buildHydrateCommand() {
-        // -p preserves archive modes: ordinary-user tar extraction otherwise applies umask.
+        // BusyBox tar applies the umask for non-root users even when -p is present.
         return List.of(
                 "docker",
                 "exec",
                 "-i",
                 dockerState.getContainerId(),
-                "tar",
-                "-xpf",
-                "-",
-                "-C",
+                "sh",
+                "-c",
+                "umask 000; exec tar -xpf - -C \"$1\"",
+                "workspace-tar",
                 dockerState.getWorkspaceRoot());
     }
 

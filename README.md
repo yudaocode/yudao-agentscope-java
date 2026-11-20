@@ -1,5 +1,9 @@
 <!-- YUDAO-COMPATIBILITY-INTRO-BEGIN -->
 
+Docker Sandbox 在 JDK 8、17、25 的非 root 容器冷恢复验证中保留了 POSIX 文件模式和脚本可执行位。
+
+发版记录见[芋道变更日志](CHANGELOG-YUDAO.md)。
+
 上游源码已对齐至 `21be74a8a`。共用安装包已在 Boot 3.5.15／JDK 17、Boot 4.2.0／JDK 25 通过 Ollama 工具与文本回归。
 Harness 与 AgentRun、Daytona、E2B、Kubernetes 沙箱模块通过工作区权限保留和子 Agent 等待逻辑定向回归。
 
