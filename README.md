@@ -23,14 +23,14 @@ yudao-agentscope-java 是 [AgentScope Java](https://github.com/agentscope-ai/age
 
 | 分支 | 目标环境 | 源码开发版本 | Maven Central | 状态 |
 | --- | --- | --- | --- | --- |
-| [`main`](https://github.com/yudaocode/yudao-agentscope-java/tree/main) | Boot 3.x / 4.x，JDK 17 / 25 | `2.1.0-SNAPSHOT` | [2.1.0-preview-20261119](https://central.sonatype.com/artifact/cn.iocoder.agentscope/agentscope-bom/2.1.0-preview-20261119) | 核心和基础 starter 已完成同 jar 四组合验证，其他扩展验收中 |
-| [`main-jdk8`](https://github.com/yudaocode/yudao-agentscope-java/tree/main-jdk8) | Boot 2.x，JDK 8 | `2.1.0-jdk8-SNAPSHOT` | [2.1.0-jdk8-preview-20261119](https://central.sonatype.com/artifact/cn.iocoder.agentscope/agentscope-bom/2.1.0-jdk8-preview-20261119) | 核心、基础与 DashScope starter 已通过 Boot 2.7/JDK 8 验证，其他扩展移植中 |
+| [`main`](https://github.com/yudaocode/yudao-agentscope-java/tree/main) | Boot 3.x / 4.x，JDK 17 / 25 | `2.1.0-SNAPSHOT` | [2.1.0-preview-20261120](https://central.sonatype.com/artifact/cn.iocoder.agentscope/agentscope-bom/2.1.0-preview-20261120) | 核心和基础 starter 已完成同 jar 四组合验证，其他扩展验收中 |
+| [`main-jdk8`](https://github.com/yudaocode/yudao-agentscope-java/tree/main-jdk8) | Boot 2.x，JDK 8 | `2.1.0-jdk8-SNAPSHOT` | [2.1.0-jdk8-preview-20261120](https://central.sonatype.com/artifact/cn.iocoder.agentscope/agentscope-bom/2.1.0-jdk8-preview-20261120) | 核心、基础与 DashScope starter 已通过 Boot 2.7/JDK 8 验证，其他扩展移植中 |
 
 AgentScope 的现代制品由 Boot 3/4 共用，版本不带 JDK 后缀。当前分支：**`main`**。
 
 Maven groupId 为 **`cn.iocoder.agentscope`**，artifactId 和 Java 包名沿用官方。同一个应用只选择一条版本线，同一项目的模块使用同一版本；替换已有依赖时，也要移除对应官方 groupId 下的同类模块，避免重复类。
 
-Boot 3/4 共用的 JDK 17+ 预览版 [2.1.0-preview-20261119](https://central.sonatype.com/artifact/cn.iocoder.agentscope/agentscope-bom/2.1.0-preview-20261119) 已发布到 Maven Central。首批发布范围包括核心、基础 starter 和独立沙箱 SDK。Durable 开发组件、示例以及 Micronaut/Quarkus 扩展待后续发布。
+Boot 3/4 共用的 JDK 17+ 预览版 [2.1.0-preview-20261120](https://central.sonatype.com/artifact/cn.iocoder.agentscope/agentscope-bom/2.1.0-preview-20261120) 已发布到 Maven Central。首批发布范围包括核心、基础 starter 和独立沙箱 SDK。Durable 开发组件、示例以及 Micronaut/Quarkus 扩展待后续发布。
 
 ## 如何使用
 
@@ -38,7 +38,7 @@ Boot 3/4 共用的 JDK 17+ 预览版 [2.1.0-preview-20261119](https://central.so
 
 ```xml
 <properties>
-    <yudao-agentscope.version>2.1.0-preview-20261119</yudao-agentscope.version>
+    <yudao-agentscope.version>2.1.0-preview-20261120</yudao-agentscope.version>
 </properties>
 <dependencyManagement>
     <dependencies>
@@ -63,7 +63,7 @@ Boot 3/4 共用的 JDK 17+ 预览版 [2.1.0-preview-20261119](https://central.so
 
 Boot 2.7/JDK 8 分支的支持模块、构建与 HTTP 依赖配置见 [Java 8 使用说明](https://github.com/yudaocode/yudao-agentscope-java/blob/main-jdk8/JAVA8-COMPATIBILITY.md)。
 
-独立沙箱 SDK 通过 `cn.iocoder.agentscope:agentscope-runtime-sandbox-core` 按需引入，版本由 AgentScope BOM 管理。Boot 2 使用 `2.1.0-jdk8-SNAPSHOT`，Boot 3/4 共用 `2.1.0-preview-20261119`；不需要引入整个 AgentScope core。使用兼容 SandboxService 管理服务，或配置本机 Docker 与所需沙箱镜像。源码来源、构建、请求超时及资源关闭说明见 [Runtime sandbox 使用说明](agentscope-runtime-sandbox-core/README_zh.md)。外部平台与具体工具服务需按实际环境配置，不能将本地兼容测试理解为所有外部后端均已验收。
+独立沙箱 SDK 通过 `cn.iocoder.agentscope:agentscope-runtime-sandbox-core` 按需引入，版本由 AgentScope BOM 管理。Boot 2 使用 `2.1.0-jdk8-SNAPSHOT`，Boot 3/4 共用 `2.1.0-preview-20261120`；不需要引入整个 AgentScope core。使用兼容 SandboxService 管理服务，或配置本机 Docker 与所需沙箱镜像。源码来源、构建、请求超时及资源关闭说明见 [Runtime sandbox 使用说明](agentscope-runtime-sandbox-core/README_zh.md)。外部平台与具体工具服务需按实际环境配置，不能将本地兼容测试理解为所有外部后端均已验收。
 
 共用 `main` 的 `agentscope-extensions-jdbc` 已在 JDK 17 和 25 分别通过 MySQL 8.0 与 PostgreSQL 16 的 16 项 Docker 集成测试，均零跳过。可通过 `mvn -pl :agentscope-extensions-jdbc -am -Pintegration -Dtest=MysqlIntegrationTest,PostgresIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test` 复验。
 
