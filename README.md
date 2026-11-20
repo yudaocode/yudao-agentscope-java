@@ -85,7 +85,7 @@ Spring Boot 3.5.15、4.1.2 各在 JDK 17、25 连接 Docker MinIO，每组通过
 
 按需引入 `cn.iocoder.agentscope:agentscope-ollama-spring-boot-starter`，设置 `agentscope.model.provider=ollama`、`agentscope.ollama.base-url` 和 `agentscope.ollama.model-name`。Boot 2.7 parent 需将 HttpClient 5 和 HttpCore 5 分别对齐到 5.6.5、5.4.4。
 
-使用已安装的 starter 连接 Docker 内的 Ollama 0.40.9。Boot 2.7.18 / JDK 8、Boot 3.5.15 与 Boot 4.1.2 / JDK 17、25 五组均通过非流式和流式文本聊天测试，覆盖文本增量、结束原因和 token 用量。[接入及复验步骤](compatibility-tests/ollama-starter-chat/README.md)
+使用已安装的 starter 连接 Docker 内的 Ollama 0.40.9。Boot 2.7.18 / JDK 8、Boot 3.5.15 与 Boot 4.1.2 / JDK 17、25 五组均通过非流式和流式文本聊天测试，覆盖文本增量、结束原因和 token 用量。同一矩阵使用 `qwen3:0.6b` 验证自动装配的 ReActAgent 执行 Java 工具，并在最终回答中使用工具返回值。[接入及复验步骤](compatibility-tests/ollama-starter-chat/README.md)
 
 <!-- YUDAO-COMPATIBILITY-INTRO-END -->
 

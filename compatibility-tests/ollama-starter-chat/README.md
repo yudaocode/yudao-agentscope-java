@@ -36,3 +36,7 @@ mvn -f compatibility-tests/ollama-starter-chat/pom.xml clean test \
 ```
 
 `main-jdk8` 固定使用 Boot 2.7.18。`main` 同一份已安装 starter JAR 可在 Boot 3.5.15 和 4.1.2 下复验。
+
+## 工具回合复验
+
+另外在本地 Ollama 拉取 `qwen3:0.6b`。原有测试命令会一并执行工具回归，可以通过 `-Dollama.tool-model` 指定支持工具调用的模型标签。用例启用 `agentscope.agent.enabled=true`，将注册有 Java 工具的 `Toolkit` 作为 bean 交给 starter，并验证自动装配的 `ReActAgent` 使用 Ollama 模型调用工具一次、最终回答包含其返回值。
