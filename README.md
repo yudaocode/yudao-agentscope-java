@@ -23,14 +23,14 @@ yudao-agentscope-java 是 [AgentScope Java](https://github.com/agentscope-ai/age
 
 | 分支 | 目标环境 | 源码开发版本 | Maven Central | 状态 |
 | --- | --- | --- | --- | --- |
-| [`main`](https://github.com/yudaocode/yudao-agentscope-java/tree/main) | Boot 3.x / 4.x，JDK 17 / 25 | `2.1.0-SNAPSHOT` | [2.1.0-preview-20261119](https://central.sonatype.com/artifact/cn.iocoder.agentscope/agentscope-bom/2.1.0-preview-20261119) | 核心和基础 starter 已完成同 jar 四组合验证，其他扩展验收中 |
-| [`main-jdk8`](https://github.com/yudaocode/yudao-agentscope-java/tree/main-jdk8) | Boot 2.x，JDK 8 | `2.1.0-jdk8-SNAPSHOT` | [2.1.0-jdk8-preview-20261119](https://central.sonatype.com/artifact/cn.iocoder.agentscope/agentscope-bom/2.1.0-jdk8-preview-20261119) | 核心、基础与 DashScope starter 已通过 Boot 2.7/JDK 8 验证，其他扩展移植中 |
+| [`main`](https://github.com/yudaocode/yudao-agentscope-java/tree/main) | Boot 3.x / 4.x，JDK 17 / 25 | `2.1.0-SNAPSHOT` | [2.1.0-preview-20261120](https://central.sonatype.com/artifact/cn.iocoder.agentscope/agentscope-bom/2.1.0-preview-20261120) | 核心和基础 starter 已完成同 jar 四组合验证，其他扩展验收中 |
+| [`main-jdk8`](https://github.com/yudaocode/yudao-agentscope-java/tree/main-jdk8) | Boot 2.x，JDK 8 | `2.1.0-jdk8-SNAPSHOT` | [2.1.0-jdk8-preview-20261120](https://central.sonatype.com/artifact/cn.iocoder.agentscope/agentscope-bom/2.1.0-jdk8-preview-20261120) | 核心、基础与 DashScope starter 已通过 Boot 2.7/JDK 8 验证，其他扩展移植中 |
 
 AgentScope 的现代制品由 Boot 3/4 共用，版本不带 JDK 后缀。当前分支：**`main-jdk8`**。
 
 Maven groupId 为 **`cn.iocoder.agentscope`**，artifactId 和 Java 包名沿用官方。同一个应用只选择一条版本线，同一项目的模块使用同一版本；替换已有依赖时，也要移除对应官方 groupId 下的同类模块，避免重复类。
 
-Boot 2 / JDK 8 兼容版 [2.1.0-jdk8-preview-20261119](https://central.sonatype.com/artifact/cn.iocoder.agentscope/agentscope-bom/2.1.0-jdk8-preview-20261119) 已发布到 Maven Central。下面的 Maven 示例直接使用发布坐标。 本次包含基础 starter 和独立沙箱 SDK。Durable 开发模块和示例单独维护。发布版本按 `官方版本[-jdk数字][-preview]-YYYYMMDD` 命名；共用制品省略 JDK，未发布上游基线增加 preview，无同日序号。
+Boot 2 / JDK 8 兼容版 [2.1.0-jdk8-preview-20261120](https://central.sonatype.com/artifact/cn.iocoder.agentscope/agentscope-bom/2.1.0-jdk8-preview-20261120) 已发布到 Maven Central。下面的 Maven 示例直接使用发布坐标。 本次包含基础 starter 和独立沙箱 SDK。Durable 开发模块和示例单独维护。发布版本按 `官方版本[-jdk数字][-preview]-YYYYMMDD` 命名；共用制品省略 JDK，未发布上游基线增加 preview，无同日序号。
 
 2026-11-17 前一检查点 **69 模块完整串行 `clean install`** 已在原生 JDK8 上跑完：10,358 项，失败/错误均为 0，条件跳过 71 项。此前分批门禁继续保留；本次提供全默认范围的一次完整检查点，不包含仍被排除的可选扩展和真实平台账号验收。
 
@@ -57,7 +57,7 @@ RAG Simple 已加入默认构建。93 模块原生 JDK8 共 11,912 项，0 失�
 
 ```xml
 <properties>
-    <yudao-agentscope.version>2.1.0-jdk8-preview-20261119</yudao-agentscope.version>
+    <yudao-agentscope.version>2.1.0-jdk8-preview-20261120</yudao-agentscope.version>
     <!-- 继承 Boot 2.7 parent 时，覆盖其旧版 HTTP 组件管理 -->
     <httpclient5.version>5.6.5</httpclient5.version>
     <httpcore5.version>5.4.4</httpcore5.version>
