@@ -81,6 +81,12 @@ Spring Boot 3.5.15、4.1.2 分别在 JDK 17、25 通过 [Durable RocketMQ 集成
 
 Spring Boot 3.5.15、4.1.2 各在 JDK 17、25 连接 Docker MinIO，每组通过 [Durable S3 对象存储集成测试](compatibility-tests/durable-minio)两项。用例覆盖同一对象重复写入、更换客户端后读回，以及检测损坏并拒绝覆盖。
 
+## Ollama starter
+
+按需引入 `cn.iocoder.agentscope:agentscope-ollama-spring-boot-starter`，设置 `agentscope.model.provider=ollama`、`agentscope.ollama.base-url` 和 `agentscope.ollama.model-name`。Boot 2.7 parent 需将 HttpClient 5 和 HttpCore 5 分别对齐到 5.6.5、5.4.4。
+
+使用已安装的 starter 连接 Docker 内的 Ollama 0.40.9。Boot 2.7.18 / JDK 8、Boot 3.5.15 与 Boot 4.1.2 / JDK 17、25 五组均通过非流式和流式文本聊天测试，覆盖文本增量、结束原因和 token 用量。[接入及复验步骤](compatibility-tests/ollama-starter-chat/README.md)
+
 <!-- YUDAO-COMPATIBILITY-INTRO-END -->
 
 ---
