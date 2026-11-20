@@ -1,6 +1,7 @@
 <!-- YUDAO-COMPATIBILITY-INTRO-BEGIN -->
 
-上游源码已对齐至 `131e3fe18`。共用安装包已在 Boot 3.5.15／JDK 17、Boot 4.2.0／JDK 25 通过 Ollama 工具与文本回归。
+上游源码已对齐至 `21be74a8a`。共用安装包已在 Boot 3.5.15／JDK 17、Boot 4.2.0／JDK 25 通过 Ollama 工具与文本回归。
+Harness 与 AgentRun、Daytona、E2B、Kubernetes 沙箱模块通过工作区权限保留和子 Agent 等待逻辑定向回归。
 
 > 版本命名：保留当前源码基线的官方版本号；共用现代制品不加 JDK 后缀，隔离维护的兼容路线添加 `jdk8` / `jdk17` / `jdk25`。开发版本使用 SNAPSHOT。JDK 路线后缀不等于最低字节码版本，框架依赖仍按 Boot 版本选择。
 > 完整版本规则与预览命名见 [VERSIONING.md](VERSIONING.md)。
