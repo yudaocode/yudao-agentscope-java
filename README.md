@@ -1,5 +1,7 @@
 <!-- YUDAO-COMPATIBILITY-INTRO-BEGIN -->
 
+上游源码已对齐至 `131e3fe18`。安装包已在 Boot 2.7.18／原生 JDK 8 通过 Ollama 工具与文本回归。
+
 > 版本命名：保留当前源码基线的官方版本号；共用现代制品不加 JDK 后缀，隔离维护的兼容路线添加 `jdk8` / `jdk17` / `jdk25`。开发版本使用 SNAPSHOT。JDK 路线后缀不等于最低字节码版本，框架依赖仍按 Boot 版本选择。
 > 完整版本规则与预览命名见 [VERSIONING.md](VERSIONING.md)。
 
@@ -239,7 +241,7 @@ Model providers are shipped as separate extension modules in 2.0. Add the one yo
 
 Other options: `agentscope-extensions-model-openai`, `agentscope-extensions-model-anthropic`, `agentscope-extensions-model-gemini`, `agentscope-extensions-model-ollama`. See the [Model docs](https://java.agentscope.io/dev/en/docs/building-blocks/model.html) for details.
 
-For typed text and image classification, see [OpenAI Decisions](docs/v2/en/integration/judge/openai-decisions.md), available in `2.1.0-SNAPSHOT` builds containing the extension.
+For typed text and image classification, see [OpenAI Decisions](docs/dev/en/integration/judge/openai-decisions.md), available in `2.1.0-SNAPSHOT` builds containing the extension.
 
 To use the reasoning and tool APIs of `ReActAgent` and compose application capabilities yourself, depend on `agentscope-core` and your model extension.
 
